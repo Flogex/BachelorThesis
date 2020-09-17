@@ -1,0 +1,68 @@
+2020-09-04 10:07:49,095 INFO o.a.j.u.JMeterUtils: Setting Locale to en
+2020-09-04 10:07:49,152 INFO o.a.j.JMeter: Loading user properties from: C:\Users\gerli\Portable\JMeter\bin\user.properties
+2020-09-04 10:07:49,168 INFO o.a.j.JMeter: Loading system properties from: C:\Users\gerli\Portable\JMeter\bin\system.properties
+2020-09-04 10:07:49,170 INFO o.a.j.JMeter: Copyright (c) 1998-2020 The Apache Software Foundation
+2020-09-04 10:07:49,171 INFO o.a.j.JMeter: Version 5.3
+2020-09-04 10:07:49,171 INFO o.a.j.JMeter: java.version=11.0.8
+2020-09-04 10:07:49,171 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2020-09-04 10:07:49,171 INFO o.a.j.JMeter: os.name=Windows 10
+2020-09-04 10:07:49,171 INFO o.a.j.JMeter: os.arch=amd64
+2020-09-04 10:07:49,172 INFO o.a.j.JMeter: os.version=10.0
+2020-09-04 10:07:49,172 INFO o.a.j.JMeter: file.encoding=Cp1252
+2020-09-04 10:07:49,173 INFO o.a.j.JMeter: java.awt.headless=null
+2020-09-04 10:07:49,173 INFO o.a.j.JMeter: Max memory     =1073741824
+2020-09-04 10:07:49,173 INFO o.a.j.JMeter: Available Processors =4
+2020-09-04 10:07:49,189 INFO o.a.j.JMeter: Default Locale=English (EN)
+2020-09-04 10:07:49,190 INFO o.a.j.JMeter: JMeter  Locale=English
+2020-09-04 10:07:49,190 INFO o.a.j.JMeter: JMeterHome=C:\Users\gerli\Portable\JMeter
+2020-09-04 10:07:49,190 INFO o.a.j.JMeter: user.dir  =C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter
+2020-09-04 10:07:49,191 INFO o.a.j.JMeter: PWD       =C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter
+2020-09-04 10:07:49,192 INFO o.a.j.JMeter: IP: 172.31.64.1 Name: SURFACE-FLO FullName: SURFACE-FLO
+2020-09-04 10:07:49,201 INFO o.a.j.s.FileServer: Default base='C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter'
+2020-09-04 10:07:49,204 INFO o.a.j.s.FileServer: Set new base='C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter'
+2020-09-04 10:07:49,480 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2020-09-04 10:07:49,529 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2020-09-04 10:07:49,539 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2020-09-04 10:07:49,545 INFO o.a.j.s.SaveService: Loading file: performance.jmx
+2020-09-04 10:07:49,664 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-04 10:07:49,664 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-04 10:07:49,664 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-04 10:07:49,665 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-04 10:07:49,665 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2020-09-04 10:07:49,665 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2020-09-04 10:07:49,741 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,743 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,747 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,748 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,749 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,750 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,751 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,752 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,754 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-04 10:07:49,768 INFO o.a.j.p.h.c.CacheManager: Will only cache the following methods: [GET]
+2020-09-04 10:07:49,935 INFO o.a.j.JMeter: Creating summariser <summary>
+2020-09-04 10:07:49,973 INFO o.a.j.e.StandardJMeterEngine: Running the test!
+2020-09-04 10:07:49,976 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2020-09-04 10:07:49,976 INFO o.a.j.s.SampleEvent: List of sample_variables: []
+2020-09-04 10:07:50,008 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must contain the string: '.functions.'
+2020-09-04 10:07:50,008 INFO o.a.j.e.u.CompoundVariable: Note: Function class names must not contain the string: '.gui.'
+2020-09-04 10:07:51,513 INFO o.a.j.JMeter: Running test (1599206871513)
+2020-09-04 10:07:51,544 INFO o.a.j.e.StandardJMeterEngine: Starting ThreadGroup: 1 : GraphQL-1-250
+2020-09-04 10:07:51,544 INFO o.a.j.e.StandardJMeterEngine: Starting 1 threads for group GraphQL-1-250.
+2020-09-04 10:07:51,544 INFO o.a.j.e.StandardJMeterEngine: Thread will continue on error
+2020-09-04 10:07:51,544 INFO o.a.j.t.ThreadGroup: Starting thread group... number=1 threads=1 ramp-up=1 delayedStart=false
+2020-09-04 10:07:51,552 INFO o.a.j.t.ThreadGroup: Started thread group number 1
+2020-09-04 10:07:51,552 INFO o.a.j.e.StandardJMeterEngine: All thread groups have been started
+2020-09-04 10:07:51,562 INFO o.a.j.t.JMeterThread: Thread started: GraphQL-1-250 1-1
+2020-09-04 10:07:51,595 INFO o.a.j.p.h.s.HTTPHCAbstractImpl: Local host = SURFACE-FLO
+2020-09-04 10:07:51,606 INFO o.a.j.p.h.s.HTTPHC4Impl: HTTP request retry count = 0
+2020-09-04 10:07:51,608 INFO o.a.j.s.SampleResult: Note: Sample TimeStamps are START times
+2020-09-04 10:07:51,608 INFO o.a.j.s.SampleResult: sampleresult.default.encoding is set to ISO-8859-1
+2020-09-04 10:07:51,608 INFO o.a.j.s.SampleResult: sampleresult.useNanoTime=true
+2020-09-04 10:07:51,608 INFO o.a.j.s.SampleResult: sampleresult.nanoThreadSleep=5000
+2020-09-04 10:08:00,030 INFO o.a.j.r.Summariser: summary +    567 in 00:00:09 =   66.6/s Avg:     5 Min:     1 Max:   570 Err:     0 (0.00%) Active: 1 Started: 1 Finished: 0
+2020-09-04 10:08:10,386 INFO o.a.j.t.JMeterThread: Thread is done: GraphQL-1-250 1-1
+2020-09-04 10:08:10,386 INFO o.a.j.t.JMeterThread: Thread finished: GraphQL-1-250 1-1
+2020-09-04 10:08:10,387 INFO o.a.j.e.StandardJMeterEngine: Notifying test listeners of end of test
+2020-09-04 10:08:10,389 INFO o.a.j.r.Summariser: summary +    934 in 00:00:10 =   90.1/s Avg:     9 Min:     1 Max:    82 Err:     0 (0.00%) Active: 0 Started: 1 Finished: 1
+2020-09-04 10:08:10,395 INFO o.a.j.r.Summariser: summary =   1501 in 00:00:19 =   79.5/s Avg:     7 Min:     1 Max:   570 Err:     0 (0.00%)

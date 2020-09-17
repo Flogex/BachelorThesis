@@ -1,0 +1,1 @@
+jmeter --nongui --testfile performance.jmx --logfile results.jtl

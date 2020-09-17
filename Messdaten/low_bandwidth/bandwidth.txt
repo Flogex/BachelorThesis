@@ -1,0 +1,4 @@
+Server:
+
+58kB/s ausgehend
+34kB/s eingehend

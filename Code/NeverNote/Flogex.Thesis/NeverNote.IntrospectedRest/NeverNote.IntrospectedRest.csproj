@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>Flogex.Thesis.NeverNote.IntrospectedRest</AssemblyName>
+    <RootNamespace>Flogex.Thesis.NeverNote.IntrospectedRest</RootNamespace>
+    <nullable>enable</nullable>
+    <UserSecretsId>b3004d37-d933-4760-9f43-38525ff1b491</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Introspected REST\Flogex.Thesis.IntREST\IntRest\IntRest.csproj" />
+    <ProjectReference Include="..\NeverNote.Shared\NeverNote.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+
+</Project>

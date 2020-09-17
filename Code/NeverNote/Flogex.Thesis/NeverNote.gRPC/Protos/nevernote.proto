@@ -1,0 +1,109 @@
+syntax = "proto3";
+package flogex.thesis.nevernote;
+
+option csharp_namespace = "Flogex.Thesis.NeverNote.gRPC";
+option java_package = "flogex.thesis.nevernote.grpc";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+// import "google/protobuf/wrappers.proto";
+
+service NeverNoteService {
+	// Creating custom messages for requests/responses enables adding of new fields in the future
+	rpc GetNotes (GetNotesRequest) returns (GetNotesResponse);
+	rpc GetAuthors (GetAuthorsRequest) returns (GetAuthorsResponse);
+	rpc AddNote (AddNoteRequest) returns (AddNoteResponse); // Requires authentication
+	rpc AddKeyword (AddKeywordRequest) returns (AddKeywordResponse); // Requires authentication
+	rpc DeleteNote (DeleteNoteRequest) returns (DeleteNoteResponse);
+	rpc Signup (SignupRequest) returns (SignupResponse);
+}
+
+message GetNotesRequest {
+	// oneof means at most one; this is, field is nullable
+	oneof search_field {
+		Note.Id id = 1;
+		string title = 2;
+		Author.Id author_id = 3;
+		string keyword = 4;
+	}
+}
+
+message GetNotesResponse {
+	repeated Note notes = 1;
+}
+
+message GetAuthorsRequest {
+	// oneof means at most one; this is, field is nullable
+	oneof search_field {
+		Author.Id id = 1;
+	}
+}
+
+message GetAuthorsResponse {
+	repeated Author authors = 1;
+}
+
+message AddNoteRequest {
+	string title = 1;
+	string content = 2;
+}
+
+message AddNoteResponse {
+	Note created_note = 1;
+}
+
+message AddKeywordRequest {
+	Note.Id note_id = 1;
+	string new_keyword = 2;
+}
+
+message AddKeywordResponse {
+	Note updated_note = 1;
+}
+
+message DeleteNoteRequest {
+	Note.Id id = 1;
+}
+
+message DeleteNoteResponse {
+	bool success = 1;
+}
+
+message SignupRequest {
+	string user_name = 1;
+	string given_name = 2;
+	string family_name = 3;
+	string email = 4;
+	google.protobuf.Timestamp birthdate = 5; // can be null
+}
+
+message SignupResponse {
+	Author created_author = 1;
+}
+
+message Note {
+	Id id = 1;
+	string title = 2;
+	string content = 3;
+	Author.Id creator = 4;
+	repeated Author.Id contributors = 5;
+	repeated string keywords = 6;
+	google.protobuf.Timestamp date_created = 7;
+
+	message Id {
+		uint32 value = 1;
+	}
+}
+
+message Author {
+	Id id = 1;
+	string user_name = 2;
+	string given_name = 3;
+	string family_name = 4;
+	string email = 5;
+	google.protobuf.Timestamp birthdate = 6; // can be null
+
+	message Id {
+		uint32 value = 1;
+	}
+}

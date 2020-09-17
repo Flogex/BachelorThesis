@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "NeverNote.gRPC": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:28002"
+    }
+  }
+}

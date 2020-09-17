@@ -1,0 +1,55 @@
+2020-09-05 09:36:12,953 INFO o.a.j.u.JMeterUtils: Setting Locale to en
+2020-09-05 09:36:12,989 INFO o.a.j.JMeter: Loading user properties from: C:\Users\gerli\Portable\JMeter\bin\user.properties
+2020-09-05 09:36:12,990 INFO o.a.j.JMeter: Loading system properties from: C:\Users\gerli\Portable\JMeter\bin\system.properties
+2020-09-05 09:36:12,992 INFO o.a.j.JMeter: Copyright (c) 1998-2020 The Apache Software Foundation
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: Version 5.3
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: java.version=11.0.8
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: os.name=Windows 10
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: os.arch=amd64
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: os.version=10.0
+2020-09-05 09:36:12,993 INFO o.a.j.JMeter: file.encoding=Cp1252
+2020-09-05 09:36:12,994 INFO o.a.j.JMeter: java.awt.headless=null
+2020-09-05 09:36:12,994 INFO o.a.j.JMeter: Max memory     =1073741824
+2020-09-05 09:36:12,994 INFO o.a.j.JMeter: Available Processors =4
+2020-09-05 09:36:13,006 INFO o.a.j.JMeter: Default Locale=English (EN)
+2020-09-05 09:36:13,007 INFO o.a.j.JMeter: JMeter  Locale=English
+2020-09-05 09:36:13,007 INFO o.a.j.JMeter: JMeterHome=C:\Users\gerli\Portable\JMeter
+2020-09-05 09:36:13,007 INFO o.a.j.JMeter: user.dir  =C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter
+2020-09-05 09:36:13,008 INFO o.a.j.JMeter: PWD       =C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter
+2020-09-05 09:36:13,009 INFO o.a.j.JMeter: IP: 172.30.96.1 Name: SURFACE-FLO FullName: SURFACE-FLO
+2020-09-05 09:36:13,282 INFO o.a.j.JMeter: Setting LAF to: com.github.weisj.darklaf.DarkLaf:com.github.weisj.darklaf.theme.IntelliJTheme
+2020-09-05 09:36:13,773 INFO o.a.j.JMeter: Loaded icon properties from org/apache/jmeter/images/icon.properties
+2020-09-05 09:36:20,157 INFO o.a.j.JMeter: Loading file: performance.jmx
+2020-09-05 09:36:20,162 INFO o.a.j.s.FileServer: Default base='C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter'
+2020-09-05 09:36:20,167 INFO o.a.j.s.FileServer: Set new base='C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter'
+2020-09-05 09:36:21,469 INFO o.a.j.s.SaveService: Testplan (JMX) version: 2.2. Testlog (JTL) version: 2.2
+2020-09-05 09:36:21,507 INFO o.a.j.s.SaveService: Using SaveService properties version 5.0
+2020-09-05 09:36:21,510 INFO o.a.j.s.SaveService: Using SaveService properties file encoding UTF-8
+2020-09-05 09:36:21,513 INFO o.a.j.s.SaveService: Loading file: performance.jmx
+2020-09-05 09:36:21,570 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/html is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-05 09:36:21,570 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xhtml+xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-05 09:36:21,571 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for application/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-05 09:36:21,571 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/xml is org.apache.jmeter.protocol.http.parser.LagartoBasedHtmlParser
+2020-09-05 09:36:21,571 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/vnd.wap.wml is org.apache.jmeter.protocol.http.parser.RegexpHTMLParser
+2020-09-05 09:36:21,572 INFO o.a.j.p.h.s.HTTPSamplerBase: Parser for text/css is org.apache.jmeter.protocol.http.parser.CssParser
+2020-09-05 09:36:21,760 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,761 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,777 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,781 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,794 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,795 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,796 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,798 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,808 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:21,819 INFO o.a.j.p.h.c.CacheManager: Will only cache the following methods: [GET]
+2020-09-05 09:36:22,048 INFO o.a.j.s.FileServer: Set new base='C:\Users\gerli\OneDrive\Dokumente\Studium\6. Semester\Bachelorarbeit\Code\JMeter'
+2020-09-05 09:36:24,778 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,779 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,780 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,780 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,780 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,781 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,781 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,781 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler
+2020-09-05 09:36:24,782 INFO v.z.j.g.c.GrpcClientSampler: Created GrpcClientSampler

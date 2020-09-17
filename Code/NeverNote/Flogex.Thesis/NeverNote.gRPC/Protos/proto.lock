@@ -1,0 +1,338 @@
+{
+  "definitions": [
+    {
+      "protopath": "nevernote.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "GetNotesRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "Note.Id"
+              },
+              {
+                "id": 2,
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "author_id",
+                "type": "Author.Id"
+              },
+              {
+                "id": 4,
+                "name": "keyword",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "GetNotesResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "GetAuthorsRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "Author.Id"
+              }
+            ]
+          },
+          {
+            "name": "GetAuthorsResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "authors",
+                "type": "Author",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "AddNoteRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "content",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "AddNoteResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "created_note",
+                "type": "Note"
+              }
+            ]
+          },
+          {
+            "name": "AddKeywordRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "note_id",
+                "type": "Note.Id"
+              },
+              {
+                "id": 2,
+                "name": "new_keyword",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "AddKeywordResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "updated_note",
+                "type": "Note"
+              }
+            ]
+          },
+          {
+            "name": "DeleteNoteRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "Note.Id"
+              }
+            ]
+          },
+          {
+            "name": "DeleteNoteResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "success",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "SignupRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "user_name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "given_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "family_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "email",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "birthdate",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "SignupResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "created_author",
+                "type": "Author"
+              }
+            ]
+          },
+          {
+            "name": "Note",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "Id"
+              },
+              {
+                "id": 2,
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "content",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "creator",
+                "type": "Author.Id"
+              },
+              {
+                "id": 5,
+                "name": "contributors",
+                "type": "Author.Id",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "keywords",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "date_created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Id",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "type": "uint32"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Author",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "Id"
+              },
+              {
+                "id": 2,
+                "name": "user_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "given_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "family_name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "email",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "birthdate",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Id",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "type": "uint32"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "services": [
+          {
+            "name": "NeverNoteService",
+            "rpcs": [
+              {
+                "name": "GetNotes",
+                "in_type": "GetNotesRequest",
+                "out_type": "GetNotesResponse"
+              },
+              {
+                "name": "GetAuthors",
+                "in_type": "GetAuthorsRequest",
+                "out_type": "GetAuthorsResponse"
+              },
+              {
+                "name": "AddNote",
+                "in_type": "AddNoteRequest",
+                "out_type": "AddNoteResponse"
+              },
+              {
+                "name": "AddKeyword",
+                "in_type": "AddKeywordRequest",
+                "out_type": "AddKeywordResponse"
+              },
+              {
+                "name": "DeleteNote",
+                "in_type": "DeleteNoteRequest",
+                "out_type": "DeleteNoteResponse"
+              },
+              {
+                "name": "Signup",
+                "in_type": "SignupRequest",
+                "out_type": "SignupResponse"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "flogex.thesis.nevernote"
+        },
+        "options": [
+          {
+            "name": "csharp_namespace",
+            "value": "Flogex.Thesis.NeverNote.gRPC"
+          },
+          {
+            "name": "java_package",
+            "value": "flogex.thesis.nevernote.grpc"
+          },
+          {
+            "name": "java_multiple_files",
+            "value": "true"
+          }
+        ]
+      }
+    }
+  ]
+}
