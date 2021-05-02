@@ -1,0 +1,33 @@
+{
+    "data": {
+        "content": {
+            "json-home": {
+                "description": "Microtype for JSON Home Documents"
+            },
+            "json": {
+                "description": "Microtype for plain JSON"
+            }
+        },
+        "runtime": {
+            "offset-pagination": {
+                "category": "pagination",
+                "documentation": "https://example.com/docs/offset-pag"
+            } 
+        },
+        "introspection": {
+            "json-hyper-schema": {
+                "configuration": {
+                    "includeSelf": {
+                        "possibleValues": [true, false], 
+                        "default": true
+                    },
+                    "includeValidationSchema": {
+                        "possibleValues": [true, false], 
+                        "default": true
+                    }
+                }
+            }
+        }
+    },
+    "meta": {}
+}

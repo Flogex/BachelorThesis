@@ -1,0 +1,14 @@
+{
+    "data": {
+        "notes": [
+            { "id": 1, "title": "Rezept" },
+            { "id": 2, "title": "To-Do-Liste" },
+        ]
+    },
+    "meta": {
+        "offset-pagination": {
+            "page": 1,
+            "size": 2
+        }
+    }
+}

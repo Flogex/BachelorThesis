@@ -1,0 +1,164 @@
+% !TeX root = ../main.tex
+\chapter{Introspected REST}\label{ch:intrest}
+
+In diesem Kapitel wird Introspected REST vorgestellt, ein neuer Architekturstil, welcher auf REST aufbaut und als Alternative zu REST und GraphQL positioniert wird \autocite{Vasilakis2017}. Zu Beginn werden die Motivation für Introspected REST dargestellt und die zwei Grundpfeiler, Introspection und Microtypes, erläutert. Im Anschluss wird eine prototypische Implementierung von Introspected REST beschrieben.
+
+\section{Definition und Hauptbestandteile}\label{sec:intrest|theory}
+
+\textbf{Introspected REST} ist ein Architekturstil, welcher fünf der sechs REST-Prinzipien unverändert beibehält, das Hypermedia-Prinzip aber durch das \textbf{Introspection-Prinzip} (\enquote{Introspection as the Engine of Application State}) ersetzt. Dieses besagt, dass ein Client jederzeit die Möglichkeit haben soll, durch Introspection Informationen über die API und deren Ressourcen sowie über mögliche Zustandsübergänge und Aktionen (Hypermedia) zur Laufzeit abzufragen. Weiterhin fördert Introspected REST den Einsatz von Mediatypes, welche aus kleinen, zusammensetzbaren Einheiten, den \textbf{Microtypes}, bestehen.
+
+Dieser Abschnitt beginnt mit der Definition grundlegender Begriffe des Datenmodels von Introspected REST\@. Danach folgt eine Beschreibung der Probleme von REST nach Vasilakis. Zum Schluss werden das Introspection-Prinzip sowie Microtypes näher erläutert.
+
+\subsection{Datenmodell}
+Vasilakis unterscheidet zwei Formen von Daten in Introspected REST: Nutzdaten und Metadaten. \textbf{Nutzdaten} beschreiben die eigentliche Repräsentation einer Ressource. Man könnte sie vage beschreiben als die Daten, welche den Endnutzer interessieren. \textbf{Metadaten} sind zusätzliche Informationen über eine Ressource (z.B.\ eine Beschreibung in Prosaform), eine Repräsentation (z.B.\ \textit{JSON Schema} (\autocites{JsonSchemaCore}{JsonSchemaValidation})) oder die Client-Server-Kommunikation (z.B. Pagination-Details). Hypermedia ist in diesem Modell eine spezielle Art der Metadaten. Weitere Arten von Metadaten sind u.a.\ Laufzeit-Metadaten, die sich von Request zu Request ändern können und bspw.\ Pagination-Informationen umfassen, strukturelle Metadaten, welche die Struktur der Nutzdaten beschreiben, und informationelle Metadaten, die Informationen für einen menschlichen Leser liefern \autocite[Abs.~9.1]{Vasilakis2017}.
+
+\para{}Nach Vasilakis existieren drei Formen von Hypermedia:
+
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item \itemname{Links} sind ein Verweis auf eine Ressource, die in Beziehung zu der aktuellen Ressource steht
+    \item \itemname{Actions} sind Links, welche Informationen darüber enthalten, wie die referenzierte Ressource manipuliert werden kann
+    \item \itemname{Forms} dienen ebenfalls zur Manipulation von Ressourcen, sind aber semantisch äquivalent zu HTML Forms \autocite[Abs.~9.1.2]{Vasilakis2017}
+\end{itemize}
+Zur besseren Unterscheidung bezeichnet ein Link im Folgenden einen Verweis auf eine Ressource, welcher die Ressource nicht manipuliert, d.h.\ sicher ist, wenn man ihm folgt.
+
+\subsection{Probleme von REST}\label{subsec:intrest|theory|rest-problems}
+Introspected REST wurde entworfen, um die Probleme, die REST mit sich bringt, zu lösen, während die Vorteile von REST beibehalten und der Funktionsumfang nicht eingeschränkt werden sollte \autocite[Kap.~0, 2]{Vasilakis2017}. Vasilakis beschreibt folgende Probleme von REST, basierend auf seinen eigenen Erfahrungen und ohne Angabe von Belegen:
+
+\begin{enumerate}[label=\textbf{P\arabic*}]
+    \item\label{itm:intrest|theory|rest-problems|complexity}\itemname{Zu hohe Komplexität:} In gängigen REST-APIs wird Hypermedia in jedem Response des Servers mitgesendet. Dadurch steigt die Komplexität, mit der ein Client umgehen muss. Weiterhin ist es schwierig, dynamische Hypermedia-Elemente auf Serverseite zu implementieren und zu testen. Ein dynamisches Hypermediaelement ist bspw.\ ein Link, der nur für autorisierte Nutzer sichtbar ist \autocite[Abs.~8.2.1]{Vasilakis2017}.
+
+    \item\label{itm:intrest|theory|rest-problems|useless-information}\itemname{Möglicherweise nutzlose Informationen:} Da im Vornherein nicht bekannt ist, welche Informationen ein Client benötigt, werden alle möglichen Hypermedia-Elemente zum Client gesendet. Dieser muss dadurch Informationen verarbeiten, die er nicht benötigt \autocite[Abs.~8.2.2]{Vasilakis2017}. Vor allem Clients, die Hypermedia überhaupt nicht verwenden, leiden unter der zusätzlichen Datenlast.
+
+    \item\label{itm:intrest|theory|rest-problems|performance-sacrifice}\itemname{Evolvierbarkeit zu Lasten der Performance:} Die unabhängige Weiterentwicklung von Server und Client wird durch Hypermedia möglich gemacht. Allerdings wächst durch viele Hypermedia-Elemente die Größe der Responses. Dadurch verlangsamt sich das Senden, Empfangen und Parsen \autocite[Abs.~8.2.3]{Vasilakis2017}.
+
+    \item\label{itm:intrest|theory|rest-problems|hypermedia-caching}\itemname{Kein Hypermedia-Caching:} Obwohl sich Hypermediainformationen nur selten ändern, ist es nicht möglich, diese zu cachen, da sie in REST mit den Nutzdaten vermixt sind. Sind die Nutzdaten im Cache nicht mehr aktuell oder gar nicht erst cachebar, gilt dies auch für die Hypermedia-Elemente des jeweiligen Response \autocite[Abs.~8.2.4]{Vasilakis2017}.
+
+    \item\label{itm:intrest|theory|rest-problems|hypermedia-evolvability}\itemname{Schlechte Hypermedia-Evolvierbarkeit:} Durch die Vermischung von Nutzdaten und Hypermedia ist es nicht möglich, die Hypermedia-Elemente unabhängig von der Ressource weiterzuentwickeln \autocite[Abs.~8.2.5]{Vasilakis2017}.
+
+    \item\label{itm:intrest|theory|rest-problems|backwards-compatibility}\itemname{Keine inkrementelle Entwicklung:} Wenn einer API, die noch über keine Hypermediaunterstützung verfügt, Hypermedia-Elemente hinzufügt werden, erfordert dies einen neuen Mediatype, da sonst die Semantik der API verändert werden würde. Hypermedia kann also nicht in abwärtskompatibler Art und Weise hinzugefügt werden \autocite[Abs.~8.2.6.1]{Vasilakis2017}.
+
+    \item\label{itm:intrest|theory|rest-problems|no-composition}\itemname{Keine Komposition:} REST fördert nicht die Komposition verschiedener Teile einer API, die jeweils durch eine eigene Spezifikation beschrieben werden könnten. Vor allem die Mediatypes in HTTP sind große Monolithen, die alles an einem Ort beschrieben \autocite[Abs.~8.2.7.2]{Vasilakis2017}.
+\end{enumerate}
+
+\subsection{Das Introspection-Prinzip}\label{subsec:intrest|theory|introspection}
+Das Hypermedia-Prinzip von REST schließt mit ein, dass ein Client kein vorheriges Wissen über die API benötigt mit Ausnahme der Einstiegs-URL sowie die Unterstützung der von der API verwendeten Mediatypes. Alle weiteren Informationen, die für die Interaktion mit dem Server benötigt werden, werden durch Hypermedia bereitgestellt \autocite{Fielding2008}. Fielding hat, soweit es dem Autor bekannt, keine Aussage darüber getroffen, \emph{wie} Hypermedia zum Client gelangen soll. Stattdessen wird nur das \emph{Vorhandensein} von Hypermedia gefordert. Der heute übliche Ansatz ist, Hypermedia als Teil der Repräsentation zu senden. Hypermedia kann dabei einen Großteil der Nachricht ausmachen.
+
+In \cref{lst:appendices|listings|hal} (siehe Anhang) ist der Payload eines HTTP-Response abgebildet. Der verwendete Mediatype ist die \emph{Hypertext Application Language (HAL)} bzw.\ \mediatype{application/hal+json} (\autocite{Kelly2016}). HAL ist ein universeller Mediatype für REST mit Hypermedia-Unterstützung. Das Listing entstammt der Spezifikation und wird als repräsentatives Beispiel angenommen. In dem Response nimmt Hypermedia 15 von 30 Zeilen in Anspruch (alle \inlinecode{_links}-JSON-Propertys)~\textendash{} und dabei werden noch nicht einmal umfangreiche Informationen geliefert, wie Vasilakis in \autocite[Abs.~7.3]{Vasilakis2017} beschreibt. Für einen Client, welcher Hypermedia nicht verwendet, bedeutet die größere Nachricht eine längere Zeit bis zum vollständigen Empfangen und ein Mehraufwand beim Parsen. Die Integration von Hypermedia in jede Repräsentation, wie es bei REST-APIs heute üblich ist, trägt zu den Problemen~\ref{itm:intrest|theory|rest-problems|complexity} bis~\ref{itm:intrest|theory|rest-problems|hypermedia-evolvability} bei.
+
+\para{}Introspection bezeichnet die Fähigkeit eines Systems, Informationen über sich selbst abzufragen. Im Fall von Introspected REST soll ein Client Informationen über die API, deren Ressourcen, zulässige Aktionen sowie Metadaten durch Introspection-Requests erhalten \autocite[Abs.~9.3]{Vasilakis2017}.
+
+Das Introspection-Prinzip besagt, dass die Nutzdaten und Metadaten, vor allem Hypermedia, getrennt werden sollen. Nur Laufzeit-Metadaten dürfen mit den Nutzdaten kombiniert werden \autocite[Abs.~9.3.2]{Vasilakis2017}. Daraus folgt, dass Hypermedia nicht mehr Teil der Repräsentation einer Ressource sein darf. Stattdessen wird Hypermedia in einem eigenen Request angefragt. Für Clients, die Hypermedia keine Beachtung schenken, verringert sich dadurch die Größe des ursprünglichen Response erheblich, denn den Introspection-Request müssen sie nicht senden. Hypermediaaffine Clients müssen dagegen einen zusätzlichen Request zum Server senden, was einen Mehraufwand bedeutet. Durch Multiplexing und Server Push dürften die Auswirkungen mit HTTP/2 allerdings vernachlässigbar sein.
+
+Da Metadaten, mit Ausnahme der Laufzeit-Metadaten, sich nicht so schnell verändern wie die Nutzdaten, kann der Introspection-Response gecacht werden (siehe Problem~\ref{itm:intrest|theory|rest-problems|hypermedia-caching}). Auch wenn sich die Nutzdaten ändern, muss der Client keinen zusätzlichen Introspection-Request senden. Dadurch kann sich die Gesamtgröße empfangener Nachrichten sogar für hypermediaaffine Clients verringern. Durch Microtypes kann ein Client dem Server außerdem mitteilen, welche Art von Metadaten er empfangen möchte, was noch mehr Einsparungen bedeuten kann. Dies wird in \cref{subsec:intrest|theory|microtypes} genauer erläutert.
+
+Introspection setzt gewissermaßen \enquote{intelligente} Clients voraus, weil diese die beiden Responses miteinander kombinieren müssen. Zum Beispiel müssen sie Nutzdaten in ein URI-Template des Introspection-Response einsetzen können.
+
+\FloatBarrier{}
+\subsection{Microtypes}\label{subsec:intrest|theory|microtypes}
+Das Ziel von Microtypes ist es, einen Mediatype in mehrere unabhängige Komponenten aufzuteilen, welche jeweils einen Teil der Funktionalität einer API abbilden. Der Mediatype dient nur noch als Container für Microtypes und legt fest, wie Clients die benötigten Microtypes auswählen können. Microtypes weisen vier Eigenschaften auf. Sie sind:
+
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item klein, d.h.\ sie haben eine einzige Verantwortung
+    \item unabhängig, d.h.\ ein Client kann die Informationen eines Microtypes verstehen, ohne andere Microtypes kennen zu müssen
+    \item wiederverwendbar, d.h.\ sie sollen in mehreren APIs eingesetzt werden können und es sollten Programmbibliotheken sowohl für die Client- als auch für die Serverentwicklung existieren
+    \item konfigurierbar, z.B.\ über Parameter im HTTP-Accept-Header \autocite{Vasilakis2017a}
+\end{itemize}
+
+\subsubsection{Content-Negotiation}
+Content-Negotiation ist der Prozess in HTTP, durch welchen die bestmögliche Repräsentation einer Ressource ausgewählt wird, abhängig von den Präferenzen des Clients und dem Angebot des Servers. Die Repräsentationen können sich u.a.\ in Kodierung, Sprache oder Mediatype unterscheiden. RFC 7231 definiert zwei Arten von Content-Negotiation: proaktive (servergetriebene) und reaktive (clientgetriebene). Für die \textbf{proaktive Content-Negotiation} sendet ein Client seine Präferenzen mit einem Request mit. Beispielsweise können dafür die HTTP-Accept-Header verwendet werden. Der Server entscheidet anhand der bereitgestellten Informationen über die Repräsentation, welche er zurücksendet. Der \emph{Apache HTTP Server}\footnote{Apache HTTP Server Project: \url{https://httpd.apache.org/} (besucht am 15.09.2020)} verwendet z.B.\ den \emph{httpd-Negotiation-Algorithmus} \autocite{ApacheServer_Conneg}. Bei der \textbf{reaktiven Content-Negotiation} sendet der Server eine Liste der möglichen Repräsentationen an den Client und dieser ruft die für ihn passende Repräsentation auf \autocite{RFC7231}.
+
+Client und Server sollen durch Content-Negotiation über die verwendeten Microtypes verhandeln können. Ein Client kann z.B.\ eine Präferenz für JSON als Datenformat angeben, \textit{Problem Details} (\autocite{RFC7807}) als Format für Fehlermeldungen, Cursor-Pagination als Pagination-Mechanismus, \textit{JSON-LD} (\autocite{JsonLD}) für semantische Anreicherungen und \textit{GraphQL} als Query-Language für die Suche. Diese Spezifikationen müssten in einen entsprechenden Microtype verpackt werden. Content-Negotiation kann auch mit Introspection kombiniert werden. Beispielsweise kann ein Microtype existieren, der nur über die verfügbaren HTTP-Methoden der Ressource informiert. Weitere \textbf{Introspection-Microtypes} könnten \textit{JSON Schema} oder \textit{JSON Hyper-Schema} (\autocite{JsonHyperSchema}) einbinden, um Clients über das Schema der Ressource bzw. zusätzlich über vorhandene Hypermedia-Elemente zu unterrichten. Je nachdem, welche Informationen ein Client benötigt, kann er den jeweiligen Microtype auswählen. Damit ein Client weiß, welche Microtypes vorhanden sind, sollen Microtypes entdeckbar sein: Ein Server soll einen Client darüber informieren, welche Microtypes er anbietet.
+
+\para{}Durch das Aufkommen vieler verschiedener mobiler Clients müssen große API-Anbieter mit einer Vielzahl von Benutzungsszenarien und Anforderungen an die API umgehen können. In der Folge sind Architekturmuster wie \emph{Backends for Frontends} (\autocite{Plotnicki2015}) oder neuen API-Stilen wie GraphQL \autocite{Giroux2019} entstanden. Microtypes bilden den Lösungsansatz von Introspected REST für dieses Problem. Da Clients individuell die verwendeten Microtypes aushandeln können, ist eine viel bessere Anpassung an die individuellen Gegebenheiten möglich. API-Anbieter könnten selbst so weit gehen, dass Microtypes die Nutzdaten prägen. Zum Beispiel könnten eigene Microtypes existieren, um mehr oder weniger Details für Elemente einer Liste darzustellen. Content-Negotiation von Microtypes ist der Grund, weshalb Vasilakis Introspected REST nicht nur als Alternative des \enquote{klassischen} RESTs darstellt, sondern auch als Alternative zu GraphQL.
+
+\subsubsection{Unabhängigkeit}
+Durch die Unabhängigkeit der Microtypes ist es möglich, einen Microtype durch einen anderen mit ähnlicher Funktionalität zu ersetzen, neue Microtypes hinzuzufügen und Microtypes zu verändern und zu erweitern, ohne dass der Mediatype oder andere Microtypes angepasst werden müssen. Anstatt also eine neue Version eines Mediatypes veröffentlichen zu müssen, wenn sich dessen Funktionsumfang ändert, kann der Server einen Client über einen neu vorhandenen Microtype informieren. Neue Clients können dann den neuen Microtype anfragen, verwenden aber die gleiche Version des Mediatypes wie noch nicht angepasste Clients. Werden Microtypes clientseitig als unabhängige Module implementiert, muss nur ein Modul geändert werden, um auf Änderungen an einem Microtype zu reagieren.
+
+\subsubsection{Wiederverwendbarkeit}
+Microtypes eröffnen das Potenzial für ein Ökosystem an API-Features, wie es Verborgh und Dumontier beschreiben. In einem solchen wird gleiche API-Funktionalität durch die gleiche Schnittstelle verkörpert. Zum Beispiel wäre die Schnittstelle für das Hochladen eines Fotos bei APIs verschiedener sozialer Netzwerke gleich. So könnten, wie im Human-Web, mit der Zeit wiedererkennbare Muster entstehen, sodass Entwicklerinnen und Entwickler sich nicht umgewöhnen müssen und der Einarbeitungsaufwand zurückgeht \autocite{Verborgh2018}. Für API-Anbieter würde sich der Designaufwand reduzieren, da sie auf bekannte Muster zurückgreifen können \autocite{Wilde2018}. Gleichzeitig ermöglicht die Wiederverwendbarkeit von API-Features die Wiederverwendung von Code. Beispielsweise könnten Microtypes clientseitig in Bibliotheken umgesetzt werden, die über Paketmanager verteilt werden. Cliententwicklerinnen und -entwickler könnten so flexibel die benötigten Funktionen wählen, ohne an die Art und Weise eines bestimmten Mediatypes gebunden zu sein, während sie ohne großen Aufwand Bibliotheken miteinander komponieren. Clients würden auch universeller werden. So könnte ein Client für mehrere soziale Netzwerke verwendet werden mit minimalen Anpassungen an die jeweilige API.
+
+\section{Prototypische Implementierung}\label{sec:intrest|prototype}
+
+Für den Vergleich von Introspected REST mit anderen API-Stilen wird eine konkrete API benötigt. Es existieren allerdings bisher keine öffentlichen Implementierungen des Introspected-REST-Architekturstils. Deshalb wird im Folgenden eine Implementierung auf Basis von HTTP unter Verwendung von ASP.NET Core 3.1\footnotemark{} vorgestellt. Der Quellcode für die Implementierung ist in \path{/Code/Introspected REST} zu finden. Wie bei REST benötigt ein Client zum Anfang eine Einstiegs-URL\@. Weiterhin muss er den Container-Mediatype sowie die für die API relevanten Microtypes verstehen.
+
+\footnotetext{Introduction to ASP.NET Core: \url{https://docs.microsoft.com/en-us/aspnet/core/introduction-to-aspnet-core?view=aspnetcore-3.1} (besucht am 02.09.2020)}
+
+\subsection{Ein Container-Mediatype für Microtypes}
+Der Container-Mediatype dient als Hülle für die Microtypes, welche die eigentlichen Nutz- und Metadaten enthalten. Der im Folgenden verwendete, nicht-standardisierte Mediatype ist \mediatype{application/vnd.microtype-container+json}. Er verfügt über zwei JSON-Propertys, welche das Datenmodell von Introspected REST abbilden: \inlinecode{data} und \inlinecode{meta}.
+
+Die \inlinecode{data}-Property dient zum Transport der Nutzdaten und kann eine beliebige Form haben. Das heißt, es können Wahrheitswerte, Zahlen, Zeichenketten, null, Arrays und Objekte in der \inlinecode{data}-Property stehen. Die Struktur kann durch einen \textbf{Content-Microtype} beschrieben werden. Dieser wird im \header{Content-Type}-Header als \texttt{content}-Parameter angegeben. Content-Microtypes können z.B.\ Daten in Form von normalem JSON transportieren oder weitergehende Spezifikationen wie \textit{JSON Home Documents} \autocite{Nottingham2017} nachbilden. 
+
+\begin{microtypedef}[content/json]
+    Kann beliebige Daten im JSON-Format (RFC 8259) transportieren. Es werden keine weiteren Aussagen über die Daten getroffen.
+\end{microtypedef}
+
+\begin{microtypedef}[content/json-home]
+    Stellt Informationen über die API bereit. Dieser Microtype folgt der Spezifikation für JSON-Home-Documents (\textit{draft-nottingham-json-home-06}). Die JSON-Property \inlinecode{resources} enthält Links und ist nach Spezifikation nicht optional, muss aber für diesen Microtype ein leeres Objekt sein, da Links durch Introspection bereitgestellt werden.
+\end{microtypedef}
+
+\noindent{}\inlinecode{meta} ist der Platz für Laufzeit-Metadaten wie bspw.\ Pagination-Informationen. \inlinecode{meta} ist ein JSON-Objekt und verfügt über eine Property für jeden \textbf{Runtime-Microtype}, wobei der Schlüssel der Property dem Bezeichner des Microtypes entspricht. Der Wert der Property ist vom jeweiligen Microtype abhängig. Für jede Microtype-Kategorie sollte der verwendete Microtype im \header{Content-Type}-Header als Parameter angegeben werden. \Cref{lst:appendices|listings|container-mediatype} (siehe Anhang) zeigt ein Beispiel eines Introspected-REST-Response. Der Wert des \header{Content-Type}-Headers für dieses Beispiel wäre:
+
+\begin{minted}[autogobble,breaklines=true]{text}
+    Content-Type: application/vnd.microtype-container+json;content=json; pagination=offset-pagination
+\end{minted}
+
+\noindent{}Fehlermeldungen können im \inlinecode{meta}-Teil angegeben werden. Dafür wird ein \textbf{Fehler-Microtype} verwendet. Es wird empfohlen, einen Standard-Microtype für diesen Fall festzulegen, auch wenn dieser nicht durch den Client verhandelt wurde. Ein geeigneter Standard sind die \emph{Problem-Details für HTTP APIs}. Es ist möglich, dass die \inlinecode{data}-Property Nutzdaten enthält, obwohl Fehler vorhanden sind.
+
+\begin{microtypedef}[error/problem-details]
+    Vermittelt zusätzliche Informationen über einen Fehler an den Client. Die Struktur des Microtypes entspricht dem \mediatype{application/problem+json}-Mediatype (RFC 7807).
+\end{microtypedef}
+
+\subsection{Content-Negotiation für Microtypes}
+Damit der Server weiß, welche Informationen der Client benötigt, verhandeln beide die verwendeten Microtypes. Wie in \cref{subsec:intrest|theory|microtypes} beschrieben, gibt es in HTTP reaktive und proaktive Content-Negotiation. Die hier vorgestellte Implementierung verwendet die proaktive Variante mit \header{Accept}-Header. Einem HTTP-Header wurde Vorzug gegenüber Query-Parametern gegeben, weil die präferierten Microtypes Metainformationen über die Kommunikation und keine domänrelevanten Informationen darstellen. Es ist aufgrund der möglicherweise großen Anzahl an Permutationen von Microtypes nicht möglich, die ausgewählten Microtypes in dem Pfad der URL zu kodieren. Wie von Vasilakis vorgeschlagen \autocite[Abs.~10.2]{Vasilakis2017}, werden die Microtypes als Parameter des Mediatypes angegeben.
+
+\begin{minted}[autogobble,breaklines=true]{text}
+    Accept: application/vnd.microtype-container+json; pagination=offset-pagination;error=problem-details
+\end{minted}
+
+Werden mehrere Microtypes für dieselbe Kategorie angegeben, wählt der Server den ersten unterstützten Microtype aus. Unterstützt der Server keinen der angegebenen Microtypes, antwortet er mit \texttt{406 Not Acceptable}.
+
+Die Implementierung setzt zwar hauptsächlich auf proaktive Content-Negotiation, verbindet dies aber mit einer Übersicht unterstützter Microtypes. Diese Übersicht ist der Body des \texttt{406}-HTTP-Response, wenn keiner der angegebenen Microtypes akzeptiert wird. Somit ist eine Art der reaktiven Content-Negotiation möglich.
+
+\subsection{Introspection durch HTTP-OPTIONS}\label{subsec:intrest|prototype|introspection}
+Introspection wird durch einen OPTIONS-Request ausgeführt, wie es von Vasilakis vorgeschlagen wurde \autocite[Abs.~10.4.1]{Vasilakis2017}. Clients können präferierte Introspection-Microtypes im \header{Accept}-Header des Requests angeben. Das Resultat ist in der \inlinecode{data}-Property des Container-Mediatypes enthalten. Im Gegensatz zu Nutzdaten, deren Content-Microtype im \texttt{content}-Parameter des \header{Content-Type}-Header angegeben wird, ist bei einem Introspection-Response der \texttt{content}-Parameter nicht gesetzt. Stattdessen wird der verwendete Introspection-Microtype im \texttt{introspection}-Parameter sichtbar gemacht. Das Problem an OPTIONS-Requests ist, dass keine Unterscheidung zwischen verschiedenen HTTP-Methoden für die gleiche Ressource getroffen werden kann. So muss im Introspection-Response sowohl \inlinecode{GET /notes} als auch \inlinecode{POST /notes} behandelt werden. Ein weiteres Problem ist, dass OPTIONS-Responses nach RFC 7231 nicht cachebar sind \autocite[Abs.~4.3.7]{RFC7231}. Somit besteht das Problem~\ref{itm:intrest|theory|rest-problems|hypermedia-caching} bei diesem Ansatz weiterhin.
+
+Ein möglicher Introspection-Microtype könnte die standardmäßige Funktionalität eines OPTIONS-Requests nachbilden und nur die zulässigen HTTP-Methoden für eine Ressource zurückgeben. Für Clients, die nur an den Hypermedia-Informationen interessiert sind, wird ein Microtype, welcher nur die entsprechenden Hyperlinks zurückgibt, spezifiziert. Ein fortgeschrittenerer Microtype könnte JSON-Hyper-Schema verwenden, um das JSON-Schema des Response sowie zulässige Links und Actions an den Client zu übermitteln. Um das richtige Schema zu generieren, muss auch der \texttt{content}-Parameter des \header{Accept}-Headers berücksichtigt werden, denn das Schema ist abhängig vom verwendeten Content-Microtype.
+
+\begin{microtypedef}[introspection/methods-only]
+    Gibt die zulässigen HTTP-Methoden im \header{Allow}-Header des Response zurück.
+\end{microtypedef}
+
+\begin{microtypedef}[introspection/links-only]
+    Gibt für jede Ressource die Links zu anderen Ressourcen zurück. Es gibt eine Property \inlinecode{links}, welche ein Array von Link Descriptor Objects nach \textit{draft-handrews-json-schema-hyperschema-02} enthält.
+\end{microtypedef}
+
+\begin{microtypedef}[introspection/json-hyper-schema]
+    Enthält Metadaten über die durch die URI repräsentierte Ressource. Das Datenformat folgt der Spezifikation von JSON-Hyper-Schema (\textit{draft-handrews-json-schema-hyperschema-02}). Zustandsübergänge und mögliche Aktionen können über die \inlinecode{links}-Property spezifiziert werden. Mögliche Konfigurationseinstellungen könnten sein: \textit{include-self-link}, \textit{include-type-schema}.
+\end{microtypedef}
+
+\noindent{}Weil ein Server mehrere Microtypes anbieten kann, soll er den Client über die vorhandenen Microtypes informieren, um eine reaktive Content-Negotiation zu ermöglichen. Dafür sendet er eine Übersicht über die vorhandenen Introspection-Microtypes an den Client. Weiterhin werden mögliche Content- und Runtime-Microtypes für die angegebene Ressource aufgelistet. Dieser \textbf{Übersichts-Microtype} ist ein guter Standardwert für Introspection-Responses und sollte verwendet werden, wenn kein \texttt{introspection}-Parameter im \header{Accept}-Header eines OPTIONS-Requests angegeben wurde. Ein Beispiel für einen Overview-Response findet sich in \cref{lst:appendices|listings|introspection-overview} (siehe Anhang).
+
+\begin{microtypedef}[introspection/overview]
+    Enthält mögliche Content-Microtypes in der Property \inlinecode{content}, Runtime-Microtypes in der Property \inlinecode{runtime} und Introspection"=Microtypes in der Property \inlinecode{introspection}. Jeder Microtype wird durch eine JSON-Property abgebildet, wobei der Schlüssel der Property dem Namen des Microtypes entspricht. Die Microtype-Property kann dadurch zusätzliche Informationen wie eine verbale Beschreibung, einen Link zur Dokumentation oder mögliche Konfigurationseinstellungen vermitteln. Runtime-Microtypes müssen über eine \inlinecode{category}-Property verfügen. Unterstützt eine Ressource mehrere HTTP-Methoden, können die Informationen pro Methode angegeben werden.
+\end{microtypedef}
+
+\noindent{}Eine Möglichkeit, um Microtypes, die in der gesamten API verfügbar sind, abzufragen, könnte sein, einen Asterisk als Pfad der Anfrage zu verwenden \autocite[Abs.~4.3.7]{RFC7231}. Sinnvoll ist dies bspw.\ für Error-Microtypes. Ein Client könnte dadurch ein Vokabular an beiderseits bekannten Microtypes aufbauen und eventuell ganz auf einen zusätzlichen OPTIONS-Request verzichten. Wie immer sollten Cliententwicklerinnen und -entwickler aber einen alternativen Weg über den OPTIONS-Request programmieren, falls der Server für eine Ressource doch nicht den gewünschten Microtype verwenden kann.
+
+\subsection{Implementierung in ASP.NET Core}
+Die Basis für eine Introspected-REST-API bildet eine ASP.NET Core Web-API\@. Zu der Request-Pipeline wird Middleware für Content-Negotiation und Introspection hinzugefügt. Die \inlinecode{ConnegMiddleware} überprüft, ob der Container-Mediatype vom Client akzeptiert wird. Weiterhin werden die akzeptierten Microtypes aus dem \header{Accept}-Header extrahiert und für später gespeichert.
+
+Die \inlinecode{IntrospectionMiddleware} überprüft, ob der Request ein OPTIONS-Request ist. Falls ja, wird in den von der \inlinecode{ConnegMiddleware} extrahierten Microtypes nach einem Introspection-Microtype gesucht, der auch vom Server unterstützt wird. Die entsprechende Microtype-Implementierung ist dann dafür verantwortlich, den richtigen Response zurückzugeben. Als Eingabe erhalten die Introspection-Microtype-Implementierungen einen \inlinecode{ControllerActionDescriptor}, welcher Informationen über den durch die URL identifizierten Endpunkt enthält. Dafür muss die Middleware für Introspection nach der \inlinecode{EndpointRoutingMiddleware} von ASP.NET Core in der Request-Pipeline aufgerufen werden. Können sich Client und Server nicht auf einen Introspection-Microtype einigen oder ist im \header{Accept}-Header kein \texttt{introspection}-Parameter angegeben, wird die \inlinecode{OverviewIntrospection} ausgeführt.
+
+\inlinecode{JsonHyperSchemaIntrospection} verwendet das \inlinecode{Returns}-Attribut an den Methoden der Controller, um den erwarteten Rückgabetypen herauszufinden. Für diesen Typen wird das JSON Schema erzeugt. Links können durch \inlinecode{Link}-Attribute an der entsprechenden Klasse definiert werden. Die \inlinecode{LinksOnlyIntrospection} extrahiert nur die Links von den in den \inlinecode{Returns}-Attributen angegebenen Klassen.
+
+Ist der Request kein OPTIONS-Request, führt ASP.NET Core die Controller-Methode für den durch die URL identifizierten Endpunkt aus. Innerhalb dieser Methoden wird ein \inlinecode{RestResult} zurückgegeben, welches das \inlinecode{IActionResult}-Interface implementiert. Neben den Nutzdaten enthält ein \inlinecode{RestResult}-Objekt auch die vom Server unterstützten Runtime-Microtypes.
+
+Im \inlinecode{RestResultExecutor} erfolgt die eigentliche Content-Negotiation. Die Nutzdaten werden an den verhandelten Content-Microtype übergeben und alle vom Client nicht akzeptierten Runtime-Microtypes werden entfernt. Danach wird der Response entsprechend der Spezifikation des Container-Mediatypes und der ausgewählten Microtypes als JSON-Objekt serialisiert und der Payload in den Response-Body geschrieben.
+
+\para{}Die Implementierung ist ausgerichtet auf Erweiterbarkeit, sodass eigene Microtypes einfach hinzugefügt werden können. Durch die Verwendung von ASP.NET Core werden viele Aufgaben wie bspw.\ Routing, Authentifizierung oder die Deserialisierung des Requests übernommen. Gerade für die Generierung des JSON Schemas werden viele Attribute verwendet, welche die Übersichtlichkeit des Codes verringern. Weiterhin lassen sich nur einige zur Übersetzungszeit feststehende Werte als Parameter an Attribute übergeben. \autocite[Abs.~22.2]{CSharp} In der zum Zeitpunkt der Abgabe existierenden Implementierung wurden noch nicht alle Funktionen umgesetzt. Beispielsweise fehlen die Konfigurationsmöglichkeiten für Microtypes und die Fehlerbehandlung mithilfe von Fehler-Microtypes.
+
+\section{Zusammenfassung}
+
+Introspected REST versucht, einige Probleme moderner REST-APIs zu lösen. Dazu baut es auf zwei Pfeilern auf: Introspection und Microtypes. Das Introspection-Prinzip besagt, dass Metadaten getrennt von den Nutzdaten ausgeliefert werden sollen, und schafft vor allem Vorteile für Clients, die kein Interesse an den Hypermedia-Elementen haben. Microtypes stellen kleine, unabhängige, wiederverwendbare und konfigurierbare Einheiten der API dar, welche eine bestimmte Funktionalität beschreiben. Durch Content-Negotiation kann ein Client die Funktionalität auswählen, die ihn interessiert.
+
+Es wurde eine Implementierung basierend auf ASP.NET Core beschrieben. Dazu wurden auch einige Microtypes spezifiziert. Um eine Übersicht über alle verfügbaren Microtypes zu bekommen, existiert der Introspection-Microtype \mediatype{introspection/overview}. Die Introspection wird durch einen OPTIONS-Request angefragt.

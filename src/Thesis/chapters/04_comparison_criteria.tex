@@ -1,0 +1,199 @@
+% !TeX root = ../main.tex
+\chapter{Kriterien für den Vergleich der API-Stile}\label{ch:comp-criteria}
+
+In \cref{subsec:intrest|theory|rest-problems} wurden die Probleme von REST nach Vasilakis beschrieben. Das Ziel von Introspected REST ist es, diese Probleme zu beheben und trotzdem die Vorteile von REST beizubehalten \autocite[Kap.~2]{Vasilakis2017}. Die genannten Probleme wirken sich auf die folgenden Faktoren aus:
+
+\begin{itemize}[noitemsep]
+    \item Probleme~\ref{itm:intrest|theory|rest-problems|performance-sacrifice} und~\ref{itm:intrest|theory|rest-problems|hypermedia-caching} auf Performance
+    \item Probleme~\ref{itm:intrest|theory|rest-problems|hypermedia-evolvability},~\ref{itm:intrest|theory|rest-problems|backwards-compatibility} und~\ref{itm:intrest|theory|rest-problems|no-composition} auf Evolvierbarkeit
+    \item Probleme~\ref{itm:intrest|theory|rest-problems|complexity} und~\ref{itm:intrest|theory|rest-problems|useless-information} auf Komplexität
+\end{itemize}
+In der vorliegenden Arbeit soll Introspected REST mit alternativen API-Stilen hinsichtlich dieser drei Faktoren verglichen werden. In diesem Kapitel werden Performance, Evolvierbarkeit und Komplexität definiert und es werden Wege aufgezeigt, mit denen sich die genannten Kriterien erfassen lassen. Dazu wird in \cref{sec:comp-criteria|performance} ein Experiment zur Messung der Performance vorgestellt. \Cref{sec:comp-criteria|evolvability} beschäftigt sich mit dem Vergleich der Evolvierbarkeit, wenn sich neue, konkrete Anforderungen an die APIs ergeben. Und in \cref{sec:comp-criteria|complexity} wird die Komplexität auf Benutzbarkeit zurückgeführt und die Heuristische Evaluation für die Bewertung gewählt.
+
+\section{Performance}\label{sec:comp-criteria|performance}
+
+Performance ist eine wichtige nicht-funktionale Anforderung an viele Softwaresysteme \autocites{Williams1998}{Loosley1998} und spielt auch für Web-APIs eine große Rolle. Eine Web-API wird zwar nicht von Endanwenderinnen und -anwendern direkt verwendet, allerdings benutzen diese Anwendungen, welche mit der API kommunizieren. So trägt eine hohe Performance der API zu einem besseren Nutzererlebnis bei und kann die Entscheidung für oder wider einen Web-API-Stil beeinflussen.
+
+\subsection[Performancemetriken für Web-APIs]{Performancemetriken für Web-APIs aus Clientperspektive}
+\textbf{Performancemetriken} liefern Informationen über die Performance eines Systems. Dabei verbinden verschiedene Stakeholderinnen und Stakeholder verschiedene Erwartungen und somit Metriken mit dem Begriff \enquote{Performance} \autocite[S.~23]{Bondi2015}. Dem Anbieter einer Web-API ist eine gute Skalierung der Server bei effizienter Ressourcenausnutzung wichtig, sodass die durchschnittliche Serverauslastung für diesen eine wesentliche Metrik ist. Für Cliententwicklerinnen und -entwickler ist die vom Client wahrgenommene Performance von Bedeutung, welche durch die durchschnittliche Antwortzeit quantifizierbar ist. Letztgenannte Perspektive muss auch von Anbietern von Public-APIs berücksichtigt werden, da, wie in \cref{sec:theory|definition-classification} beschrieben, das Ziel einer Public-API die weite Verbreitung ist. Eine gute Performance kann dazu beitragen, dass sich Entwicklerinnen und Entwickler für die API eines Anbieters entscheiden und gegen die eines Konkurrenten.
+
+\para{}In dieser Arbeit wird die Performance aus der Perspektive eines API-Clients analysiert, denn es wird angenommen, dass die Auswirkungen eines API-Stils auf die vom Client wahrgenommene Performance größer sind als die Auswirkungen auf serverinterne Metriken. Die wichtigste Metrik ist dabei die Antwortzeit. Die Antwortzeit (Response Time, \(RT\)) ist die Zeit, welche vom Senden des ersten Bytes des Requests bis zum Empfangen des letzten Bytes des Response vergeht. Sie ist indirekt proportional zur Performance \(\Omega\).
+
+\begin{equation}\label{eqn:comp-criteria|performance|response-time-proportionality}
+    \Omega \sim \frac{1}{RT}
+\end{equation}
+
+\noindent{}Die Antwortzeit setzt sich zusammen aus der Zeit für die Übertragung der Anfrage (Message Transmission Time of Request, \(\mathit{MTT}_{Req}\)), der Zeit für die Verarbeitung der Anfrage auf dem Server (Server Time, \(ST\)) und der Zeit für die vollständige Übertragung der Antwort zum Client (Message Transmission Time of Response, \(\mathit{MTT}_{Resp}\)) \autocite[Abs.~6.1]{Cherkasova2003}.
+
+\begin{equation}\label{eqn:comp-criteria|performance|response-time}
+    RT = \mathit{MTT}_{Req} + ST + \mathit{MTT}_{Resp}
+\end{equation}
+
+\noindent{}Die Übertragungszeit einer Nachricht wiederum setzt sich zusammen aus der Latenz des Netzwerks (Latency of Network, \(\mathit{Lat}_{Net}\)) sowie der Nachrichtengröße (Message Length, \(\mathit{Len}_{\mathit{Msg}}\)) geteilt durch die Datenübertragungsrate des Netzwerks (Data Transfer Rate, \(\mathit{DTR}\)) \autocite[S.~83]{Coulouris2012}. Latenz und Datenübertragungsrate sind dabei Eigenschaften des Netzwerks und unabhängig von dem verwendeten API-Stil.
+
+\begin{equation}\label{eqn:comp-criteria|performance|message-transmission-time}
+    \mathit{MTT}_{\mathit{Msg}} = \mathit{Lat}_{Net} + \frac{\mathit{Len}_{\mathit{Msg}}}{\mathit{DTR}}
+\end{equation}
+
+\noindent{}Die Serverzeit ist abhängig von dem gewählten API-Stil, allerdings vor allem auch von dessen Implementierung: Je nach Framework oder Bibliothek, welche auf dem Server eingesetzt wird, kann die Zeit für die Bearbeitung einer Anfrage variieren. Ein Server kann die Server-Timing-API \autocite{Vazac2020} nutzen, um einem Client Informationen über die für interne Abläufe benötigten Zeiten zu übermitteln.
+
+\para{}Für den Vergleich der Performance verschiedener API-Stile aus Perspektive eines API-Clients wird die Antwortzeit \(RT\) ermittelt. Weiterhin erfolgt die Messung der Nachrichtengrößen von Request \(\mathit{Len}_{\mathit{Req}}\) und Response \(\mathit{Len}_{\mathit{Resp}}\), welche Rückschlüsse auf die Serverzeit zulassen. Um die Ursachen einer hohen oder niedrigen Antwortzeit besser bewerten zu können, wird die Anzahl benötigter Requests berücksichtigt.
+
+\subsection{Experiment zur Erfassung der Metriken}\label{subsec:comp-criteria|performance|experiment}
+Für den Vergleich der Performance von Introspected REST und alternativen API-Stilen wird ein szenariobasiertes Experiment durchgeführt. Ein Experiment dient zur quantitativen empirischen Untersuchung \autocite{Hakansson2013}. Es werden bestehende Hypothesen überprüft \autocite[S.~42]{Voss2019}, Beziehungen quantifiziert und Zusammenhänge offengelegt \autocite[S.~9]{Wohlin2012}.
+
+\textbf{Unabhängige Variablen} in einem Experiment sind die Einflussfaktoren, welche kontrolliert und verändert werden können. \textbf{Abhängige Variablen} werden durch die unabhängigen Variablen beeinflusst. Ein \textbf{Faktor} bezeichnet die unabhängigen Variablen, deren Effekte in dem Experiment untersucht werden sollen. Ein \textbf{Treatment} ist ein bestimmter Wert eines Faktors \autocite[S.~74f.]{Wohlin2012}. In einem Experiment wird das Verhalten eines Systems untersucht, wenn ein Faktor in der Versuchsanordnung verändert wird, während alle anderen unabhängigen Variablen konstant gehalten werden \autocite[S.~11]{Wohlin2012}.
+
+Von den empirisch-quantitativen Methoden zur Datenerhebung eignet sich ein Experiment am besten für den Vergleich der Performance. Ein solches ermöglicht es, die unabhängigen Variablen, welche Auswirkungen auf die Performance haben, zu kontrollieren. So können die Resultate auf eine Änderung eines einzigen Faktors, in diesem Fall des verwendeten API-Stils, zurückgeführt werden. Andere Einflüsse wie die Latenz und Datenübertragungsrate eines Netzwerks sowie verwendete Technologien können weitestgehend konstant gehalten werden.
+
+\subsubsection{Ziel und Kontext}
+Das Ziel des Experiments ist es, die vier API-Stile Introspected REST, REST, GraphQL und gRPC hinsichtlich ihrer Performance aus Perspektive eines API-Clients zu untersuchen, um einen Vergleich zwischen den API-Stilen zu ermöglichen. Aufgrund des begrenzten zeitlichen Umfangs dieser Arbeit wird das Experiment in einem künstlichen Kontext durchgeführt. Die Untersuchung findet anhand eines einfachen, ausgedachten Szenarios statt. Die abhängigen Variable in diesem Experiment ist die Performance der API aus Clientperspektive. Unabhängige Variablen sind die Latenz des Netzwerks, die Datenübertragungsrate und die Performance von Client und Server. Der einzige Faktor in diesem Experiment ist der verwendete API-Stil. Treatments sind Introspected REST, REST, GraphQL und gRPC.
+
+\para{}Für das Experiment wird die folgende Hypothese formuliert:
+
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item Nullhypothese \(H_0\): Die ermittelte Performance der API ist bei allen vier untersuchten API-Stilen gleich.
+    \item Alternativhypothese \(H_1\) (ungerichtet, unspezifisch): Die ermittelte Performance der vier untersuchten API-Stile unterscheidet sich. 
+\end{itemize}
+
+\subsubsection{Experimentdesign}
+Um einen möglichst realitätsnahen Performancevergleich zu ermöglichen, wird ein szenariobasierter Ansatz gewählt: Ein Client muss dafür vorgegebene Aufgaben erledigen. Dieser Ansatz ermöglicht einen Vergleich trotz Unterschiede bei den Interaktionsmustern der API-Stile. Um eine Aufgabe zu erledigen, benötigt ein Client ggf.\ mehrere Requests. Die Erhebung der Metriken erfolgt für die gesamte Kommunikation zwischen Client und Server während der Abarbeitung einer Aufgabe.
+
+Das untersuchte Szenario ist \textit{NeverNote}, eine Anwendung zum gemeinsamen Verwalten von Notizen. Die NeverNote-API bietet die Möglichkeit, neue Notizen anzulegen sowie bestehende zu ändern und zu löschen. Wird eine Notiz von einer Person bearbeitet, die nicht der Urheberin oder Urheber dieser Notiz ist, wird sie in die Liste der Bearbeiter dieser Notiz aufgenommen. Es können weiterhin Informationen über die registrierten Autorinnen und Autoren abgerufen werden und neue Autorinnen und Autoren können sich registrieren.
+
+\para{}Für den Performancevergleich müssen Clients folgende Aufgaben bewältigen:
+
+\begin{enumerate}[label=\textbf{T\arabic*}]
+    \item\label{itm:data-collection|performance|tasks|all-notes} Zeige die ID und den Titel aller Notizen sowie den Benutzernamen der jeweiligen Urheberinnen und Urheber an.
+    \item\label{itm:data-collection|performance|tasks|first-note} Zeige den Titel, Inhalt und das Erstellungsdatum der ersten Notiz aus \ref{itm:data-collection|performance|tasks|all-notes} an.
+    \item\label{itm:data-collection|performance|tasks|related-keywords} Zeige die Schlagwörter aller Notizen an, die von den Bearbeiterinnen und Bearbeitern der ersten Notiz aus \ref{itm:data-collection|performance|tasks|all-notes} bearbeitet wurden.
+    \item\label{itm:data-collection|performance|tasks|add-keyword} Füge das neue Schlagwort \enquote{Neu} zur ersten Notiz aus \ref{itm:data-collection|performance|tasks|all-notes} hinzu.
+    \item\label{itm:data-collection|performance|tasks|delete-with-keyword} Lösche alle Notizen, die über das Schlagwort \enquote{Mathematik} verfügen.
+\end{enumerate}
+Für jede dieser Aufgaben werden vier Experimente durchgeführt. Im ersten Experiment gibt es nur einen Client, welcher jede Aufgabe 250 Mal bewältigt. Im zweiten Experiment arbeiten vier Clients zeitgleich, um jede Aufgabe jeweils 100 Mal zu bearbeiten. Es wurden vier Clients für das zweite Experiment gewählt, da dies der Anzahl der logischen Kerne des Prozessors des Versuchsgeräts entspricht. Beide Experimente werden jeweils zwei Mal mit unterschiedlichen Bandbreiten durchgeführt. Der Grund, die Bandbreite zu begrenzen, liegt an der Auflösung der JMeter-Zeiterfassung von einer Millisekunde. Folglich muss die Kommunikation zwischen Client und Server länger als eine Millisekunde dauern, um sinnvolle Antwortzeiten erfassen zu können. Bei vier API-Stilen werden insgesamt \(4 * 2 * 2 = 16\) Messungen durchgeführt.
+
+\subsubsection{Instrumentation}
+Zur Erfassung der Messwerte wird \textit{Apache JMeter \textsl{5.3}}\footnote{Apache JMeter™: \url{https://jmeter.apache.org/} (besucht am 06.09.2020)} verwendet. JMeter ist eine Anwendung für Performancemessungen und Lasttests von Client-Server-Anwendungen. Diese ermöglicht die Messung der Antwortzeit (\textit{Elapsed Time} \autocite{JMeterGlossary}) sowie der Nachrichtengrößen. Die Bandbreitenbegrenzung erfolgt mithilfe von \textit{NetLimiter \textsl{4}}\footnote{NetLimiter: \url{https://www.netlimiter.com/} (besucht am 11.09.2020)}.
+
+Ein \textbf{Sampler} in JMeter sendet einen Request zum Server und erfasst dabei die Messwerte. Ein \textbf{Thread} führt eine Liste von Samplern und anderen Komponenten nacheinander aus. Dabei arbeitet er unabhängig von anderen Threads. Andere Komponentenarten sind u.a.\ Listener, welche die erfassten Messwerte auswerten und darstellen, sowie Pre- und Post-Prozessoren, welche eine Aktion vor bzw.\ nach dem Sampler-Request ausführen. Eine \textbf{Thread-Gruppe} ist ein Zusammenschluss von Threads, welche parallel ausgeführt werden \autocite{JMeter_TestPlan}.
+
+Für das Experiment werden in JMeter für jeden API-Stil zwei Thread-Gruppe angelegt: Eine mit einem Thread und eine andere mit vier Threads. Für Introspected REST, REST und GraphQL wird der Standard-HTTP-Sampler ohne TLS-Verschlüsselung verwendet, welcher eine HTTP/1.1-Verbindung aufbaut. Für gRPC-Requests wird das \textit{JMeter gRPC Plugin}\footnotemark{} installiert, welches auf Java und der gRPC-Integration in dieser Programmiersprache basiert. gRPC benutzt HTTP/2 mit TLS\@.
+
+\footnotetext{JMeter gRPC Plugin (Repository): \url{https://github.com/zalopay-oss/jmeter-grpc-plugin} (besucht am 06.09.2020)}
+
+\para{}Für jeden API-Stil wird eine Web-API auf Basis von ASP.NET Core 3.1 entwickelt. Alle APIs verfügen über den gleichen Funktionsumfang, wobei bei der Umsetzung die Charakteristika des jeweiligen Stils beachtet wurden. Um die Wiederholbarkeit zu gewährleisten, werden niemals Änderungen der Daten ausgeführt, folglich haben Aufgaben~\ref{itm:data-collection|performance|tasks|add-keyword} und~\ref{itm:data-collection|performance|tasks|delete-with-keyword} keine Seiteneffekte. Für alle API-Stile wird zu Beginn der Messung ein Request ausgeführt, welcher nicht mit in die Betrachtung einfließt, um die TCP-Verbindung zum Server zu etablieren.
+
+Die Introspected-REST-API verwendet die in \cref{ch:intrest} vorgestellte Bibliothek. Als Introspection-Microtype wird \textit{introspection/links-only} verwendet. Für die GraphQL-API wird \textit{GraphQL.NET}\footnote{GraphQL.NET\@: \url{http://graphql-dotnet.github.io/} (besucht am 06.09.2020)} verwendet, für die gRPC-API \textit{gRPC for .NET}\footnote{gRPC for .NET (Repository): \url{https://github.com/grpc/grpc-dotnet}}, welches offiziell von Microsoft unterstützt wird. % chktex 26
+
+Für die REST-API wurde der Mediatype \emph{JSON:API} bzw.\ \textit{application/vnd.api+json} \autocite{JsonAPI} gewählt. Für die Implementierung wurde das \textit{JSON API .Net Core}-Framework\footnotemark{} verwendet, welches auf ASP.NET Core aufbaut. JSON:API ist für eine grobe Unterteilung der API-Ressourcen und eine kleine Anzahl an Requests gedacht. Deshalb können die referenzierten Ressourcen, bspw.\ die Urheberin oder der Urheber einer Notiz, in den Response eingeschlossen werden (sog. \emph{Compound Documents}). Somit könnten alle benötigten Daten mit nur einem Request geholt werden \autocite{JsonAPI}. Diese Funktionalität steht aber beim Großteil der verbreiteten REST-Mediatypes nicht zur Verfügung. Um die Vergleichbarkeit mit dem Introspected-REST-Stil zu erhöhen, wird diese Funktionalität nicht verwendet, sodass mehrere Requests nötig sind, um eine Notiz (erster Request) und deren Urheberin oder Urheber (zweiter Request) abzufragen.
+
+\footnotetext{JSON API .Net Core (Repository): \url{https://github.com/json-api-dotnet/JsonApiDotNetCore/} (besucht am 06.09.2020)} % chktex 26
+
+Die Introspected-REST- und REST-API geben für alle Ressourcen einen \header{Cache-Control}-Header mit \texttt{max-age=60} zurück. In JMeter werden gecachte Requests nicht noch einmal gesendet. Allerdings werden dann auch die Post-Prozessoren nicht ausgeführt. Deshalb wird ein Cache nur für einzelne Aufgaben und nicht im gesamten JMeter-Client eingesetzt, sodass einige Requests trotzdem erneut gesendet werden. Es werden keine Conditional-Requests unterstützt und die Responses enthalten weder einen \header{ETag}- noch einen \header{Last-Modified}-Header. OPTIONS-Requests werden nicht gecacht. Der Cache wird nach jeder Iteration geleert.
+
+Alle APIs greifen auf die gleichen Daten zu, welche über die \inlinecode{NotesRepository}- und \inlinecode{AuthorsRepository}-Klasse abgefragt werden können. Die Daten liegen im Arbeitsspeicher.
+Um eine neue Notiz hinzufügen oder eine bestehende ändern zu können, muss ein \header{Authorization}-Header für Basic-Authentifizierung gesendet werden. Der dort angegebene Benutzername muss einer Autorin oder einem Autor zugeordnet sein. Die Autorin oder der Autor werden dann als Urheberin oder Urheber einer neuen Notiz bzw. Bearbeiterin oder Bearbeiter einer bestehenden Notiz hinzugefügt. Um die Requests besser identifizierbar zu machen, wird ein \header{Request-No}-Header mit jedem Request gesendet.
+
+\para{}Das Experiment wird lokal auf einem Surface Pro 4 (8GB RAM, Intel\textsuperscript{\textregistered{}} Core\texttrademark{} Prozessor i5-6300U) mit Windows 10 Pro (Version 2004) eingesetzt. JMeter und die API-Server laufen auf dem gleichen Gerät und kommunizieren über die Loopback-Schnittstelle. Dadurch ist keine (messbare) Latenz vorhanden und die Datenübertragungsrate ist nur abhängig von der begrenzten Bandbreite. Der Code für die erstellen APIs ist in den beigelegten Dateien unter \path{/Code/NeverNote} zu finden. Der JMeter-Testplan wurde unter \path{/Code/JMeter/performance.jmx} hinzugefügt.
+
+\subsection{Validität und Übertragbarkeit der Ergebnisse}
+Das ausgewählte Szenario ist einfach gehalten und deshalb nicht repräsentativ für eine API der realen Welt. Es werden Aufgaben gestellt, welche sich vor allem um das Abfragen und einfache Manipulieren von Daten drehen, da sich diese mit allen API-Stilen umsetzen lassen. Die untersuchten API-Stile werden in der Praxis aber meist für unterschiedliche Zwecke eingesetzt. So können mit REST komplexe Workflows umgesetzt werden, während sich dies mit gRPC und GraphQL schwieriger gestaltet. gRPC wurde vor allem für Interprozesskommunikation entwickelt und nicht für Public-APIs. GraphQL dient vor allem für Datenabfrage und -manipulation und ist deshalb für CRUD-artige APIs prädestiniert. Die gestellten Aufgaben sind der kleinste gemeinsame Nenner der untersuchten API-Stile.
+
+Introspected-REST- und REST-APIs tauschen mehr Daten mit dem Client aus, da zusätzlich Hypermedia-Elemente und eventuell weitere Metadaten gesendet werden. Dies führt zu größeren Nachrichten verglichen zu GraphQL und gRPC. Da dies aber in den Charakteristika der API-Stile begründet ist, beeinflusst diese Tatsache die Untersuchung nicht negativ.
+
+Mit ASP.NET Core wird zwar die gleiche Plattform für den API-Server verwendet, allerdings werden unterschiedliche Bibliotheken für die API-Implementierungen eingesetzt. Nur diejenige für gRPC wird offiziell von Microsoft unterstützt.
+
+Für gRPC wird HTTP/2 verwendet, während alle anderen API-Stile über HTTP/1.1 kommunizieren. Zwar existiert ein \textit{HTTP2 Plugin for JMeter}\footnotemark{}, dieses hat aber bei den ersten Versuchen zu Problemen geführt. HTTP/2 bietet eine bessere Kompression der HTTP-Header sowie Unterstützung für Multiplexing und Streaming, wodurch die gRPC-Anwendung einen Vorteil erhält.
+
+\footnotetext{HTTP2 Plugin for JMeter (Repository): \url{https://github.com/Blazemeter/jmeter-http2-plugin} (besucht am 06.09.2020)}
+
+Client und Server laufen auf dem gleichen Gerät und nicht in einer isolierten Umgebung.
+
+In JMeter werden die Sampler innerhalb eines Threads sequentiell ausgeführt. Gerade bei Introspected REST und REST, aber auch bei gRPC ist es in der Realität möglich, viele der Requests parallel auszuführen, sodass die vom Benutzer wahrgenommene Zeit eigentlich weit unter den in diesem Experiment erfassten Messwerten liegen würde. Die parallele Ausführung wäre entweder über mehrere TCP-Verbindung oder durch Multiplexing in HTTP/2 möglich.
+
+Die Auflösung der Zeiterfassung in JMeter beträgt nur eine Millisekunde. Bei kleinen Messergebnissen für die Antwortzeit entstehen also große Messungenauigkeiten. JMeter rundet die Ergebnisse immer auf ganze Millisekunden ab.
+
+Für das Experiment wurden nur zwei unterschiedliche Bandbreiten untersucht, deren Werte zwar wohlbegründet, aber dennoch beliebig sind. Es ist dadurch nicht sichergestellt, dass die Ergebnisse auf reale Netzwerkanwendungen übertragbar sind.
+
+Introspected REST und REST sind Architekturstile, während GraphQL und gRPC viel konkreter definiert sind. Die Ergebnisse für Introspected REST und REST sind also nicht ohne weiteres übertragbar. Beispielsweise hängt viel von dem verwendeten Mediatype ab.
+
+\subsection{Verwandte Arbeiten}
+Da bisher noch keine wissenschaftliche Literatur zu Introspected REST existiert, bildet die vorliegende Arbeit den ersten Performancevergleich von Introspected REST mit alternativen API-Stilen. Es existieren jedoch Arbeiten, welche die Performance von REST und GraphQL untersuchen. Es konnte keine Literatur gefunden werden, welche sich explizit mit der Performance von gRPC-APIs beschäftigt oder diese empirisch untersucht.
+
+Landeiro und Azevedo \autocite{Landeiro2020} haben in einer Fallstudie zwei Prototypen für eine GraphQL-API auf Basis einer bestehenden REST-API entwickelt und konnten teils erhebliche Performanceverbesserungen feststellen. Eine ähnliche Untersuchung haben Seabra et al.\ \autocite{Seabra2019} angestellt. Dafür haben sie drei Anwendungen jeweils als REST- und als GraphQL-API implementiert und konnten auch hier einen Performancevorteil von GraphQL gegenüber REST ausmachen. Cederlund \autocite{Cederlund2016} hat in einer studentischen Arbeit GraphQL und Falcor, ein anderes Framework für deklarative Datenabfragen, verglichen und die Ergebnisse auch einer REST-API gegenübergestellt. Eine weitere studentische Arbeit wurde von Eizinger \autocite{Eizinger2017} angefertigt, in welcher er REST und GraphQL anhand mehrerer Kriterien, darunter auch Performance, vergleicht. Auch Gustavsson und Stenlund \autocite{Gustavsson2016} vergleichen in ihrer Masterarbeit die Performance einer REST- und einer GraphQL-API.
+
+\section{Evolvierbarkeit}\label{sec:comp-criteria|evolvability}
+
+Wie alle Softwareprodukte muss sich auch eine Web-API an Veränderungen anpassen können. Nach der initialen Veröffentlichung können Fehler entdeckt werden, sich die Anforderungen ändern, sich technologische Änderung vollziehen oder neue Benutzungsszenarien erschlossen werden. Deshalb ist es wichtig, die API so reibungslos wie möglich anpassen zu können \textendash{} sowohl server- als auch clientseitig.
+
+\subsection{Definition und Einteilung für Web-APIs}
+\para{}Breivold et al.\ definieren \textbf{Softwareevolvierbarkeit} als \foreigntextcquote{english}{Breivold2007}[.]{the ability of a software system to adapt in response to changes in its environment, requirements and technologies that may have impact on the software system in terms of software structural and/or functional enhancements, while still taking the architectural integrity into consideration} Rowe et al.\ betrachten Evolvierbarkeit vor allem aus einer Kostenperspektive: Jene soll die Anpassung des Systems an veränderte Anforderungen mit kleinstmöglichen Kosten ermöglichen. Dabei grenzen sie Evolution von der Wartung und Instandhaltung des Systems ab. Während bei der Wartung die Anforderungen gleich bleiben, werden durch Evolution zuvor nicht spezifizierte Anforderungen umgesetzt \autocite{Rowe1998}.
+
+\para{}Eine API bildet einen Vertrag zwischen Client und Server. Wenn sich dieser Vertrag ändert, kann man zwischen abwärtskompatiblen und abwärtsinkompatiblen Änderungen unterscheiden. Bei \textbf{abwärtskompatiblen Änderungen} (engl.: \textit{non-breaking Changes}) funktioniert die Kommunikation zwischen Client und Server weiterhin wie vor der Änderung, es wird also keine Anpassung des Clients erzwungen \autocite[S.~215]{Lauret2019}. Das bedeutet aber nur, dass bspw.\ kein Fehler auftritt; die Semantik von Request und Response können sich trotzdem ändern. Außerdem sind auch bei abwärtskompatiblen Änderungen eventuell Anpassungen des Clients nötig, um eine neue Funktionalität nutzen zu können. Meistens ist das Hinzufügen neuer Elemente in der API abwärtskompatibel \autocite{Xavier2017}. \textbf{Abwärtsinkompatible Änderungen} (engl: \textit{breaking Changes}) erfordern eine Anpassung des Clients, damit die Kommunikation mit dem Server wieder funktioniert \autocite[S.~215]{Lauret2019}. Wird der Client nicht angepasst, treten bspw.\ Protokollfehler (etwa \texttt{404 Not Found}), Fehler bei der Validierung des Requests auf dem Server oder Fehler während der Verarbeitung des Response auf. Das Ändern oder Löschen bestehender Elemente der API ist meistens abwärtsinkompatibel \autocite{Xavier2017}. Lauret listet in \autocite[Kap.~9]{Lauret2019} einige abwärtsinkompatible Änderungen und deren Konsequenzen auf.
+
+\subsection{Durchführung eines Evolvierbarkeit-Vergleichs für API-Stile}\label{subsec:comp-criteria|evolvability|experiment}
+Um die Evolvierbarkeit Introspected RESTs und alternativer API-Stile zu vergleichen, werden Änderungen an APIs und deren Auswirkungen auf einen Client untersucht. Für eine Cliententwicklerin oder einen -entwickler ist vor allem relevant, \emph{ob} eine Änderung Anpassungen am Client erfordert, d.h.\, ob diese abwärtskompatibel oder -inkompatibel ist. Falls eine Anpassung erforderlich ist, müssen sie wissen, wie umfangreich die Änderungen des Clients ausfallen.
+
+\para{}Für den Vergleich wird das Szenario der NeverNote-API aus \cref{subsec:comp-criteria|performance|experiment} wieder aufgegriffen. Folgende Änderungen werden untersucht:
+
+\begin{enumerate}[label=\textbf{C\arabic*}]
+    \item\label{itm:data-collection|evolvability|add-mandatory-form-field} Zur Registrierung neuer Autorinnen und Autoren wird ein neues erforderliches Feld \textit{Geschlecht} hinzugefügt.
+    \item\label{itm:data-collection|evolvability|add-optional-form-field} Zur Registrierung neuer Autorinnen und Autoren wird ein neues optionales Feld \textit{Nationalität} hinzugefügt.
+    \item\label{itm:data-collection|evolvability|remove-mandatory-field} Das Feld \textit{Email} der Autorinnen und Autoren wird entfernt.
+    \item\label{itm:data-collection|evolvability|rename} Der Begriff \enquote{Autor} wird durch \enquote{Benutzer} ersetzt.
+    \item\label{itm:data-collection|evolvability|add-non-nullable-field} Zu den Notizen wird ein neues Feld \textit{veröffentlicht} vom Typ Boolean hinzugefügt. Wird eine neue Notiz erstellt, ist der Wert des Felds \inlinecode{false}.
+    \item\label{itm:data-collection|evolvability|add-publish-step} Es wird ein neuer Arbeitsschritt eingeführt, um eine Notiz zu veröffentlichen.
+    \item\label{itm:data-collection|evolvability|constrain-publish-step} Eine Notiz kann nur veröffentlicht werden, wenn der Wert des Felds \textit{veröffentlicht} \inlinecode{false} ist.
+    \item\label{itm:data-collection|evolvability|require-auth} Der Zugriff auf fremde Notizen, die noch nicht veröffentlicht wurden, erfordert Autorisierung.
+    \item\label{itm:data-collection|evolvability|new-capability} Bei der Abfrage von Notizen wird die Möglichkeit, nach Werten der Felder zu filtern, eingeführt.
+\end{enumerate}
+Bei der Untersuchung einer Änderung wird davon ausgegangen, dass die vorherige Änderung schon im Client implementiert wurde. Weiterhin wird angenommen, dass Best-Practices eingehalten wurden. Dazu zählt, dass Objekte in GraphQL nur wiederverwendet werden, wenn die semantische Übereinstimmung gegeben ist \autocite[S.~53ff.]{Giroux2020} und dass in gRPC explizite Nachrichtentypen für jede Methode verwendet werden \autocite[07:29--08:25]{Michela2020}. Eine dritte Annahme ist die der \enquote{idealen Clients}. Das bedeutet, dass die Clients auf übliche Fehlermeldungen des jeweiligen API-Stils reagieren können. Für die Introspected-REST-, REST- und GraphQL-APIs können ideale Clients auch so weit wie möglich Hypermedia und/oder Introspection nutzen, um sich automatisch anzupassen und bspw.\ das Userinterface basierend auf diesen Informationen zu rendern.
+
+\subsection{Validität und Übertragbarkeit der Ergebnisse}
+Die Änderungen der Anforderungen wurden durch den Autor alleine ausgewählt und könnten deshalb einer Voreingenommenheit unterliegen. Die gewählten Aufgaben sind konkrete Ausprägungen einer allgemeinen Änderung. Beispielsweise treffen die Ergebnisse für Aufgabe~\ref{itm:data-collection|evolvability|add-mandatory-form-field} auf jede Änderung zu, bei welcher ein neues erforderliches Feld zu einer Aktion hinzugefügt wird. Deshalb sind die Ergebnisse gut übertragbar, obwohl die Untersuchung in einem sehr konkreten Kontext stattfindet.
+
+\subsection{Verwandte Arbeiten}
+Das Thema \textit{Evolvierbarkeit} ist vor allem im Bereich der REST-APIs verbreitet, angefangen bei Fielding und Taylor \autocite{Fielding2000} über Block et al.\ \autocite{Block2014} bis zu Amundsen \autocite{Amundsen2017}. Lauret \autocite{Lauret2019} gibt Tipps, wie man APIs erstellt, welche abwärtskompatible Anpassungen ermöglichen. Für GraphQL und gRPC existieren Hinweise zur Vermeidung abwärtsinkompatibler Änderungen sowie zur Versionierung bei Giroux \autocite{Giroux2020} und Michela \autocite{Michela2020}. Es konnte aber keine Arbeit gefunden werden, welche die Evolvierbarkeit der API-Stile empirisch untersucht, geschweige denn die Evolvierbarkeit dieser miteinander vergleicht.
+
+\section{Komplexität}\label{sec:comp-criteria|complexity}
+
+\textbf{Komplexität} ist eine wichtige Eigenschaft von Softwaresystemen, da sie Einfluss nimmt auf die Entwicklungszeit und Wartbarkeit \autocite{Tsaur1998}. In der Literatur wird der Begriff meist sehr oberflächlich und ohne konkrete Definition verwendet. Vor allem bedeutet Komplexität auch immer etwas anderes, je nach Blickwinkel, aus welchem man ein System betrachtet: Für Entwicklerinnen und Entwickler ist bspw.\ die Komplexität des Quellcodes von großer Bedeutung, während für Endanwenderinnen und Endanwender die Komplexität der Benutzeroberfläche, d.h.\ die Benutzbarkeit/Benutzerfreundlichkeit (engl.: \textit{Usability}), wichtig ist.
+
+\subsection{Arten der Komplexität bei Web-APIs}
+Mitra unterscheidet zwei Arten von Komplexität bei Web-APIs: Systemkomplexität und Interfacekomplexität \autocite[04:08--04:25]{Mitra2015}. Die \textbf{Systemkomplexität} ist umso höher, je mehr Komponenten und Konnektoren in einem System vorhanden sind und je häufiger Kommunikation zwischen diesen stattfindet. Die \textbf{Interfacekomplexität} bezieht sich auf die Benutzbarkeit einer API\@.
+
+Für Clients einer API, welche HTTP verwendet, bleibt die Systemkomplexität, die das Netzwerk mit sich bringt, meist verborgen, da zusätzliche Komponenten wie Caches und Proxys transparent sind: Unabhängig davon, wie viele Vermittler zwischen Client und Server stehen, sieht es für den Client immer so aus, als würde er direkt mit dem Server kommunizieren. Aus Clientperspektive kann die Systemkomplexität aber z.B.\ dadurch erhöht werden, dass eine zusätzliche Abhängigkeit wie ein SDK für die API eingeführt wird.
+
+In \cref{sec:theory|definition-classification} wurden Kosteneinsparungen als Ziel von Private-APIs und eine weite Verbreitung als Ziel von Public-APIs genannt. Zur Umsetzung beider Ziele ist ein wichtiger Bestandteil, die Einarbeitungszeit und den Aufwand der Cliententwicklerinnen- und entwickler zu reduzieren \autocite{Myers2016}. Neben einer guten Dokumentation, einem guten Support und niedrigen Einstiegshürden spielt die Komplexität einer API dafür eine herausragende Rolle\footnotemark{} \autocite[S.~9]{Lauret2019}. Für Cliententwicklerinnen und -entwickler ist der Begriff Komplexität mit Interfacekomplexität \textendash{} und damit der Benutzbarkeit der API \textendash{} gleichzusetzen, da die Systemkomplexität durch die API verborgen wird. Deshalb wird im Vergleich von Introspected REST mit alternativen API-Stilen die Interfacekomplexität bzw.\ Benutzbarkeit betrachtet.
+
+\footnotetext{Um Kosten zu sparen, müssen Anbieter allerdings auch abwägen, wie viel Komplexität auf Seiten des Servers und wie viel auf Seiten des Clients behandelt werden soll, da nach Teslers \textit{Gesetz über die Erhaltung der Komplexität} ein bestimmter Teil der Komplexität nicht vermindert, sondern nur verschoben werden kann \autocite[S.~136]{Saffer2010}.}
+
+\subsection{Bewertung der Benutzbarkeit einer Web-API}\label{subsec:comp-criteria|complexity|evaluation}
+Zur Bewertung der Benutzbarkeit existieren verschiedene Strategien. Zu diesen zählen:
+
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item Theoriebasierte Bewertung, z.B.\ Heuristische Evaluation \autocite{Nielsen1990}, Cognitive Dimensions Framework \autocites{Green1996}{Clarke2003}, Cognitive Walkthrough \autocites{Polson1992}{Blackmon2002}
+    \item Befragungen, z.B.\ System Usability Scale \autocite{Brooke1996}, Fokusgruppen, Interviews
+    \item Empirische Tests, z.B.\ Think-Aloud-Technik \autocite{Lewis1982}, Usability-Tests \autocite{Nielsen1994}, Eyetracking
+\end{itemize}
+Heuristische Evaluationen werden dabei oft verwendet, obwohl sie in der Kritik stehen, da sie Zeit und Kosten sparen im Vergleich zu empirischen Tests. Die Kritik richtet sich vor allem gegen die fehlende Validität und Vollständigkeit der identifizierten Probleme \autocites{Kock2009}{Law2004}. Empirische Tests mit echten Benutzerinnen und Benutzern werden bei Untersuchungen der Mensch-Computer-Interaktion als das Nonplusultra angesehen \autocite{Myers2016}.
+
+\para{}Aufgrund des zeitlich begrenzten Umfangs dieser Arbeit wird trotz der geringeren Effektivität eine Heuristische Evaluation von Introspected REST und alternativen API-Stilen durchgeführt. Dafür werden Heuristiken aus verschiedenen Quellen zusammengetragen, die für Web-APIs relevant sind. Es existieren nicht viele solcher Heuristiken für Web-APIs selbst. Für APIs von Bibliotheken und Frameworks wurden allerdings einige Untersuchungen angestellt, etwa bei de Souza und Bentolila \autocite{Souza2009}, Zibran \autocite{Zibran2008} oder Scheller und Kühn\ \autocite{Scheller2015}. Ebenfalls existieren Richtlinien, welche den Erfahrungen der Autorinnen und Autoren entsprungen sind, bspw.\ bei Bloch \autocite{Bloch2006}. Als weitere Quelle dienen allgemeine Usability-Prinzipien und -Heuristiken, wie sie Lidwell et al.\ \autocite{Lidwell2010} oder Nielsen \autocite{Nielsen1994a} aufgestellt haben.
+
+In \cref{sec:comparison|complexity} werden die Heuristiken zusammen mit ihrer Anwendung auf die unterschiedlichen API-Stile vorgestellt. Es erfolgt eine Bewertung, wie gut einzelnen API-Stilen den jeweiligen Heuristiken entsprechen. Dafür wird folgende Skala verwendet: \texttt{-} (entspricht Heuristik überhaupt nicht), \texttt{+} (entspricht Heuristik bedingt), \texttt{++} (entspricht Heuristik zum Großteil), \texttt{+++} (entspricht Heuristik voll und ganz). Es wird keine Gewichtung der Heuristiken angegeben. Leserinnen und Leser sollten jedoch berücksichtigen, dass sich nicht alle Heuristiken gleich stark auf die Benutzerfreundlichkeit auswirken.
+
+\subsection{Validität und Übertragbarkeit der Ergebnisse}
+Wie bei einer Heuristischen Evaluation allgemein kann nicht sichergestellt werden, dass die Liste der verwendeten Heuristiken vollständig und jede Heuristik auch geeignet ist. Da der Autor kein Experte im Bereich der Benutzerfreundlichkeit ist, besteht vor allem die Gefahr, dass Heuristiken falsch, z.B.\ außerhalb des eigentlichen Kontexts, angewendet werden. Dadurch könnte eine negative Bewertung stattfinden, obwohl die Benutzerfreundlichkeit nicht negativ beeinflusst wird. Bei der Auswahl der Heuristiken hat der Autor auf sein Empfinden vertraut, ob eine Heuristik auf Web-APIs übertragbar ist. Die Auswahl ist folglich subjektiv und könnte von Voreingenommenheit geprägt sein. Ein weiteres Problem ist, dass die Evaluation nur durch einen einzigen Gutachter stattfindet und so der subjektive Eindruck noch verstärkt wird. Um die Bewertung möglichst absolut und nicht abhängig vom Ergebnis anderer API-Stile zu machen, wurden alle Heuristiken auf einmal für einen API-Stil untersucht, nicht jeder API-Stil für jede Heuristik. Trotzdem kann nicht ausgeschlossen werden, dass das Ergebnis der Bewertung eines API-Stils durch die vorherige Bewertung eines anderen beeinflusst wurde.
+
+Durch die fehlende Gewichtung der Heuristiken wird es nicht ermöglicht, die Benutzbarkeit nach Durchführung der Bewertung quantitativ zu beurteilen. Das Ergebnis des Vergleichs muss also unter einer von Fall zu Fall gewählten Gewichtung betrachtet werden, welche von Faktoren wie der Vertrautheit der Entwicklerinnen und Entwickler mit einem API-Stil oder dem Bedarf an Flexibilität abhängt. Die relative Bewertung der API-Stile bezüglich einer Heuristik stuft der Autor aber als allgemein übertragbar ein.
+
+\subsection{Verwandte Arbeiten}
+Es existieren viele Arbeiten, welche sich mit der Benutzbarkeit von APIs für Programmbibliotheken beschäftigen. Einige Autorinnen und Autoren wurden in \cref{subsec:comp-criteria|complexity|evaluation} genannt. Mosqueira-Rey et al.\ \autocite{MosqueiraRey2018} geben einen Überblick über die vorhandene Literatur im Bereich API-Usability, stellen allgemeine Heuristiken heraus und ordnen diese in eine Taxonomie ein. Robillard \autocite{Robillard2009} untersucht, wie eine API besser erlernt werden kann. Als Beispiel einer Usability-Studie für APIs sei die Untersuchung von Piccioni et al.\ \autocite{Piccioni2013} genannt. Ein Repertoire an Veröffentlichungen hält die Website \textit{API Usability}\footnote{API Usability \textendash{} Publications: \url{https://sites.google.com/site/apiusability/resources/user-studies} (besucht am 14.09.2020)} bereit. Ebenfalls mit Komplexität, wenn auch nicht von APIs, beschäftigt sich Lilienthal in ihrer Dissertation \autocite{Lilienthal2008}. Darin führt sie die Komplexität von Softwarearchitektur auf Phänomene der kognitiven Psychologie zurück.
+
+\section{Zusammenfassung}
+
+Performance wird durch Metriken beschrieben, welche Informationen über das Systemverhalten liefern aus verschiedenen Blickwinkeln liefern. In dieser Arbeit wird die Perspektive eines API-Clients eingenommen. Eine relevante Metrik ist hier vor allem die Antwortzeit \(RT\). Für den Vergleich wird ein Experiment durchgeführt, in welchem API-Clients Aufgaben lösen und dafür bestimmte Requests an den Server senden müssen. Dafür wurde für jeden untersuchten API-Stil eine API auf Basis von ASP.NET Core erstellt. Apache JMeter dient als API-Client und zur Erfassung der Messwerte.
+
+Evolvierbarkeit bezeichnet die Eigenschaft einer API, sich an veränderte Bedingungen anpassen zu können. Dazu können abwärtskompatible und -inkompatible Änderungen vollzogen werden. Für den (analogischen) Vergleich der Evolvierbarkeit von Introspected REST und alternativen API-Stilen werden Änderungen an einer existierenden API simuliert und die Auswirkungen auf den Client beschrieben.
+
+Komplexität bedeutet aus Sicht von API-Nutzerinnen und -Nutzern vor allem \emph{Benutzbarkeit}. Die Benutzbarkeit der API-Stile wird in dieser Arbeit durch eine Heuristische Evaluation bewertet. Dafür kommen Heuristiken für APIs von Bibliotheken, aber auch allgemeine Usability-Prinzipien zum Einsatz.

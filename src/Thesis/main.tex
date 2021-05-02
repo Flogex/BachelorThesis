@@ -1,0 +1,128 @@
+% !TeX encoding = UTF-8
+\documentclass[
+  a4paper,
+  ngerman,
+  fontsize=12pt,
+  cleardoublepage=empty,
+  listof=notnumbered,
+  bibliography=notnumbered,
+  headsepline,
+  headings=normal,
+  draft=false,
+  BCOR=9mm
+]{scrbook}
+
+\RedeclareSectionCommand[
+  beforeskip=0pt,
+  afterindent=false
+]{chapter}
+
+\author{Florian Gerlinghoff}
+\title{Vergleich von Introspected REST mit alternativen Ansätzen für die Entwicklung von Web-APIs hinsichtlich Performance, Evolvierbarkeit und Komplexität}
+\date{18. September 2020}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[ngerman]{babel}
+\usepackage{fontspec} % for \csharp
+\usepackage[section]{placeins} % for \FloatBarrier 
+\usepackage{calc} % for widthof
+\usepackage{enumitem}
+
+\usepackage[
+  format=hang,
+  indention=-0.5cm
+]{caption}
+\captionsetup[listing]{justification=RaggedRight,singlelinecheck=false}
+
+\usepackage{array}
+\usepackage{tabulary}
+\usepackage{ltablex} % for tabularx + longtable
+\usepackage{booktabs} % for beautiful tables
+\usepackage[final,chapter,newfloat=true,cache=false]{minted}
+
+\usepackage{pdfpages} % for \includepdf
+\usepackage{graphicx} % for \includegraphics
+\graphicspath{ {graphics/} }
+\usepackage[babel=true,final]{microtype} % for better typesetting
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\newtheoremstyle{microtypedefstyle}
+  {}{} % default space above/below
+  {\hangindent \parindent} % body font
+  {} % indent
+  {\bfseries} % header font
+  {:} % head punctuation
+  { } % headspace
+  {\thmnote{#3}} % headspec
+\theoremstyle{microtypedefstyle}
+\newtheorem*{microtypedef}{Microtype}
+
+\usepackage[autostyle=once,german=quotes]{csquotes}
+
+\usepackage[backend=biber,style=ieee]{biblatex}
+\addbibresource{bib/literature.bib}
+\DeclareFieldFormat{url}{\textsc{url}: {\url{#1}}}
+\ExecuteBibliographyOptions{
+  bibwarn=true,
+  isbn=false,
+  doi=false
+}
+\renewcommand\multicitedelim{\addsemicolon\space}
+
+\usepackage[
+  pdfusetitle,
+  colorlinks,
+  linkcolor=black,
+  citecolor=black,
+  final
+]{hyperref}
+
+\usepackage[noabbrev]{cleveref}
+
+\newcommand*{\csharp}{C{\lserif\#}} % chktex 21
+\newcommand*{\pound}{\#}
+\newcommand*{\para}{\bigskip{}\noindent{}}
+\newcommand*{\inlinecode}[1]{\mintinline{text}{#1}}
+\newfontface\lserif{Liberation Serif}
+
+\newcommand*{\itemname}[1]{\textsc{\MakeLowercase{#1}}}
+\newcommand*{\mediatype}[1]{\textit{#1}}
+\newcommand*{\header}[1]{\texttt{#1}}
+
+\newcolumntype{Q}{>{\raggedleft\arraybackslash}p{\widthof{9999}}}
+\newcommand{\comprow}[5]{#1&\texttt{#2}&\texttt{#3}&\texttt{#4}&\texttt{#5}\\}
+\newcommand*{\comptable}[5]{\bigskip{}\begin{tabulary}{\linewidth}{ L C C C C }&Int. REST&REST&GraphQL&gRPC\\\midrule\comprow{#1}{#2}{#3}{#4}{#5}\end{tabulary}}
+\newcommand*{\changeheading}[2]{\multicolumn{3}{@{}l}{\textbf{\ref{#1} (#2):}}\\*[\parskip]}
+\newcommand*{\tcenter}[1]{\multicolumn{1}{c}{#1}}
+\newcommand*{\tcenterV}[1]{\multicolumn{1}{c|}{#1}}
+
+\newlength{\signaturelength}
+
+\hyphenation{GraphQL Vasilakis}
+
+\begin{document}
+
+\includepdf{frontmatter/titlepage.pdf}
+\cleardoubleemptypage{}
+\include{frontmatter/abstract}
+
+\tableofcontents{}
+
+\include{chapters/01_introduction}
+\include{chapters/02_theory}
+\include{chapters/03_introspected_rest}
+\include{chapters/04_comparison_criteria}
+\include{chapters/05_comparison}
+\include{chapters/06_discussion}
+\include{chapters/07_conclusion}
+
+\printbibliography{}
+
+\appendix
+\include{backmatter/performace_results}
+\include{backmatter/listings}
+\include{backmatter/declaration}
+
+\end{document}

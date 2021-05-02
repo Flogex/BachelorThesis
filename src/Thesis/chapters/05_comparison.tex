@@ -1,0 +1,328 @@
+% !TeX root = ../main.tex
+% chktex-file 44
+\chapter{Vergleich der API-Stile}\label{ch:comparison}
+In diesem Kapitel werden die Ergebnisse des Vergleichs von Introspected REST mit REST, GraphQL und gRPC vorgestellt. Dazu werden erst die Ergebnisse des Performance-Experiments beschrieben. Danach wird die Evolvierbarkeit analysiert, indem geänderte Anforderungen simuliert werden. Im dritten Abschnitt erfolgt eine Heuristische Evaluation der API-Stile.
+
+\section{Performance}\label{sec:comparison|performance}
+
+Die 16 Messungen wurden wie in \cref{subsec:comp-criteria|performance|experiment} beschrieben durchgeführt. Für jeden einzelnen Request wurden, neben anderen Messwerten, die Antwortzeit sowie die Größen der gesendeten und empfangenen Nachrichten durch JMeter erfasst (siehe Dateien \path{/Messdaten/*/results.jtl}). Die Bezeichnungen der Requests wurde mit einer Nummer versehen, sodass sich die Requests leichter zu den Aufgaben zuordnen lassen. Die Requests für eine Aufgabe wurden im folgenden Schritt gebündelt, d.h.\ die Antwortzeiten und Nachrichtengrößen wurden addiert, sodass insgesamt \(\pound\text{Aufgaben} * \pound\text{Iterationen}\) Stichproben für jede Messung vorlagen. Für jede Aufgabe wurde nun das arithmetische Mittel der Messwerte über den Iterationen ermittelt. Die Ergebnisse werden in den folgenden Abschnitten beschrieben. Grafische Darstellungen der Ergebnisse befinden sich in \cref{ch:appendices|performance}.
+
+\subsection{Ermittlung von Requestanzahl und Nachrichtengrößen}
+In \cref{tab:comparison|performance|requestcount} wurde die Anzahl der für jede Aufgabe benötigten Requests je API-Stil notiert. In GraphQL können vier der fünf Aufgaben durch einen einzigen Request erledigt werden. Nur für die letzte Aufgabe ist erst eine Abfrage nötig, um danach Mutationen ausführen zu können. Da die gRPC-API grobkörniger gestaltet ist als die REST- und Introspected-REST-API, werden insgesamt weniger Requests benötigt. Beispielsweise werden in Aufgabe~\ref{itm:data-collection|performance|tasks|related-keywords} alle Keywords mit der Notiz zurückgegeben, während bei REST ein zusätzlicher Request zu \texttt{/notes/{id}/keywords} nötig ist. Mit der Introspected-REST-API werden ungefähr doppelt so viele Requests wie mit der REST-API benötigt, da zusätzlich ein eigener Request für die Introspection ausgeführt wird.
+Die Requests, welche bei Introspected REST und REST gecacht wurden (Zahl in Klammern), konnten beantwortet werden, ohne dass eine Verbindung mit dem Server aufgebaut werden musste. Durch die Verwendung von JSON:API als Mediatype und Bibliothek für die REST-API werden keine Responses in Aufgabe~\ref{itm:data-collection|performance|tasks|all-notes} gecacht, da auf dieselbe Autorin oder denselben Autor durch unterschiedliche URLs verwiesen wird. Beispielsweise geben \texttt{/notes/5/creator} und \texttt{/notes/6/creator} eine Repräsentation derselben Ressource zurück, trotzdem müssen beide Requests ausgeführt werden.
+
+\begingroup
+\renewcommand{\arraystretch}{1.1}
+\begin{table}[ht]
+    \begin{tabular}{ l r r r r }
+        & \tcenter{Int. REST} & \tcenter{REST} & \tcenter{GraphQL} & \tcenter{gRPC}\\
+        \midrule
+        Aufgabe 1 & 26 (+6) &      11 & 1 & 5\\
+        Aufgabe 2 &       1 &       1 & 1 & 1\\
+        Aufgabe 3 & 30 (+5) & 14 (+5) & 1 & 3\\
+        Aufgabe 4 &       3 &       2 & 1 & 1\\
+        Aufgabe 5 &      11 &       6 & 2 & 5\\
+    \end{tabular}
+    \centering
+    \caption{Anzahl der benötigten (+gecachten) Requests je Aufgabe}
+    \label{tab:comparison|performance|requestcount} % chktex 24
+\end{table}
+\endgroup
+
+In \cref{tab:comparison|performance|requestsizes} sind die Summen der Größen von Requests bzw.\ Responses für jede Aufgabe zusammengefasst. Die Größe der Responses ist bei GraphQL geringer als bei den anderen API-Stilen. Bei gRPC stechen vor allem die sehr kleinen Requests hervor, doch sind die Responses im Vergleich zu GraphQL sehr groß, da keine exakte Auswahl der Daten stattfindet. Beispielsweise werden bei Aufgabe~\ref{itm:data-collection|performance|tasks|delete-with-keyword} Id, Titel, Inhalt und Schlüsselwörter aller Notizen mit Schlagwort \enquote{Mathematik} zurückgegeben, obwohl nur die ID benötigt wird. Die Nachrichtengrößen von Introspected REST und REST liegen in der gleichen Größenordnung. Eine Ausnahme bildet hier Aufgabe~\ref{itm:data-collection|performance|tasks|all-notes}, da jede Notiz noch einmal vollständig heruntergeladen werden muss, um den Wert der \inlinecode{creator.id}-Property zu lesen und das URI-Template zu füllen, sodass dann die Urheberin oder den Urheber abgerufen werden können. Durch ein API-Design, welches besser auf dieses Szenario zugeschnitten ist, hätte diese Situation vermieden werden können. Die Gesamtanzahl der Requests von Introspected REST ist in etwa doppelt so groß wie die von REST. Die Gesamtzahl gesendeter Bytes bei Introspected REST ist folglich höher, da zu jedem Request auch eine Request-Line und die HTTP-Header gehören. Selbiges gilt im Übrigen auch für Responses: Die Status-Line und die HTTP-Header machen pro Response um die 200 Bytes aus. Im Vergleich zu GraphQL und gRPC wird bei Introspected REST und REST zusätzlich Hypermedia zum Client gesendet.
+
+\begingroup
+\renewcommand{\arraystretch}{1.1}
+\begin{table}[ht]
+    \begin{tabular}{ l r r r r }
+        & \tcenter{Int. REST} & \tcenter{REST} & \tcenter{GraphQL} & \tcenter{gRPC}\\
+        \midrule
+        Aufgabe 1 & 5666/16996 &  2017/9901 & 298/961 & 16/5325\\
+        Aufgabe 2 &    214/612 &    173/784 & 359/340 &   4/438\\
+        Aufgabe 3 & 5987/14132 & 2595/15453 & 440/928 & 12/6595\\
+        Aufgabe 4 &   805/1296 &   543/1137 & 448/249 &   9/443\\
+        Aufgabe 5 &  2817/4841 &  1325/3095 & 772/436 & 28/1290\\
+    \end{tabular}
+    \centering
+    \caption{Gesamtgröße der gesendeten/empfangenen Nachrichten in Bytes}
+    \label{tab:comparison|performance|requestsizes} % chktex 24
+\end{table}
+\endgroup
+
+\FloatBarrier{}
+\subsection{Ermittlung der Antwortzeiten}
+\cref{tab:comparison|performance|response-times-lower-bandwidth} zeigt die Antwortzeiten für die Aufgaben je API-Stil, wenn ein bzw.\ vier Clients simultan arbeiten. Die Messung wurde mit einer begrenzten Bandbreite von 34KB/s von Client zu Server und 58KB/s von Server zu Client durchgeführt.
+
+Für Aufgabe~\ref{itm:data-collection|performance|tasks|first-note} wurde bei jedem API-Stil nur ein einziger Request benötigt. Die gRPC-API ist in diesem Fall am schnellsten, gefolgt von Introspected REST und GraphQL\@. Sind die Aufgaben aber komplexer, punktet die GraphQL-API, da oft nur ein einziger Request benötigt wird und zusätzlich nur ausgewählte Daten zurückgegeben werden. Werden Requests von vier Clients gleichzeitig gesendet, steigt die durchschnittliche Antwortzeit um viel mehr als das Vierfache.
+
+\begingroup
+\renewcommand{\arraystretch}{1.1}
+\begin{table}[ht]
+    \begin{tabular}{ l | Q Q | Q Q | Q Q | Q Q }
+        & \multicolumn{2}{c|}{Int. REST} & \multicolumn{2}{c|}{REST} & \multicolumn{2}{c|}{GraphQL} & \multicolumn{2}{c}{gRPC}\\
+        Clients & \tcenter{1} & \tcenterV{4} & \tcenter{1} & \tcenterV{4} & \tcenter{1} & \tcenterV{4} & \tcenter{1} & \tcenter{4}\\
+        \hline
+        Aufgabe 1 & 215 & 1204 & 159 & 1045 &  6 &  51 & 60 & 327\\
+        Aufgabe 2 &   8 &   48 &  11 &   85 &  7 &  52 &  3 &  45\\
+        Aufgabe 3 & 194 & 1123 & 257 & 1422 &  9 &  60 & 62 & 247\\
+        Aufgabe 4 &  17 &  115 &   9 &  176 & 10 &  64 & 10 &  52\\
+        Aufgabe 5 &  53 &  419 &  60 &  404 & 14 & 116 & 24 & 264\\
+    \end{tabular}
+    \centering
+    \caption{Antwortzeiten in ms mit Bandbreite 34KB/s Up-, 58KB/s Download}
+    \label{tab:comparison|performance|response-times-lower-bandwidth} % chktex 24
+\end{table}
+\endgroup
+
+In \cref{tab:comparison|performance|response-times-higher-bandwidth} sind die Ergebnisse der gleichen Messung mit einer begrenzten Bandbreite von 100KB/s zwischen Client zu Server für beide Richtungen dargestellt. Für Aufgabe~\ref{itm:data-collection|performance|tasks|related-keywords} mit einem Client lässt sich nunmehr kein nennenswerter Unterschied in den Antwortzeiten von gRPC, GraphQL und Introspected REST feststellen. Auch bei dieser Bandbreite erhöht sich mit drei zusätzlichen Clients die Antwortzeit um viel mehr als das Vierfache.
+
+\begingroup
+\renewcommand{\arraystretch}{1.1}
+\begin{table}[ht]
+    \begin{tabular}{ l | Q Q | Q Q | Q Q | Q Q }
+        & \multicolumn{2}{c|}{Int. REST} & \multicolumn{2}{c|}{REST} & \multicolumn{2}{c|}{GraphQL} & \multicolumn{2}{c}{gRPC}\\
+        Clients & \tcenter{1} & \tcenterV{4} & \tcenter{1} & \tcenterV{4} & \tcenter{1} & \tcenterV{4} & \tcenter{1} & \tcenter{4}\\
+        \hline
+        Aufgabe 1 & 86 & 549 &  88 & 600 & 2 &  8 & 35 & 182\\
+        Aufgabe 2 &  3 &  23 &   7 &  55 & 2 &  8 &  3 &  26\\
+        Aufgabe 3 & 76 & 540 & 151 & 830 & 2 & 12 & 28 & 146\\
+        Aufgabe 4 &  7 &  63 &   5 & 101 & 3 &  7 &  4 &  32\\
+        Aufgabe 5 & 22 & 214 &  34 & 242 & 5 & 22 & 14 & 147\\   
+    \end{tabular}
+    \centering
+    \caption{Antwortzeiten in ms mit Bandbreite 100KB/s Up-, 100KB/s Download}
+    \label{tab:comparison|performance|response-times-higher-bandwidth} % chktex 24
+\end{table}
+\endgroup
+
+\section{Evolvierbarkeit}\label{sec:comparison|evolvability}
+
+In der folgenden Tabelle wird angegeben, ob eine Anpassung der Clients für die Änderungen aus \cref{subsec:comp-criteria|evolvability|experiment} zwangsläufig ist, d.h.\, ob die Änderung abwärtskompatibel ist oder nicht. Gilt die gleiche Aussage für Introspected REST und REST, wurden beide API-Stile in einer Zeile zusammengefasst.
+\bigskip{}
+
+\begingroup
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{ p{0.13\textwidth} p{0.12\textwidth} X }
+    \textbf{API-Stil} & \textbf{abwärtskomp.} & \textbf{Bemerkungen}\\\midrule\endhead
+
+    \changeheading{itm:data-collection|evolvability|add-mandatory-form-field}{Neues erforderliches Feld in Request}
+    (Intro.) REST & Ja & Ein idealer Client kann durch Hypermedia automatische Anpassungen bei Änderungen der Objekte vornehmen und neue Felder anzeigen (vgl. \autocite[S.~211ff.]{Amundsen2017}). Sind Clients nicht in dieser Weise programmiert, schlägt die Kommunikation mit dem Server bei der Registrierung neuer Autorinnen oder Autoren fehl (\texttt{400 Bad Request}).\\
+    GraphQL       & Ja   & Durch Introspection ist es für einen idealen GraphQL-Client möglich, automatisch neue Felder anzuzeigen. Sind Clients nicht in dieser Weise programmiert, schlägt die Validierung des Querys fehl.\\
+    gRPC          & Nein & Damit Clients die neu hinzugefügten Felder sehen, benötigen sie die aktualisierte Servicedefinition und müssen die Änderungen umsetzen. Bis dahin schlägt die Kommunikation mit dem Server fehl, da das Feld erforderlich, der Wert aber immer \inlinecode{null} ist.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|add-optional-form-field}{Neues optionales Feld in Request}
+    (Intro.) REST & Ja & Wie bei Änderung~\ref{itm:data-collection|evolvability|add-mandatory-form-field}, allerdings schlägt die Kommunikation von suboptimalen Clients mit dem Server bei der Registrierung neuer Autorinnen oder Autoren nicht fehl, da das Feld optional ist.\\
+    GraphQL       & Ja & Wie bei Änderung~\ref{itm:data-collection|evolvability|add-mandatory-form-field}, allerdings schlägt die Validierung des Querys von suboptimalen Clients nicht fehl, da das Feld optional ist.\\
+    gRPC          & Ja & Clients haben zwar keine Möglichkeit, das neue Feld ohne die aktualisierte Servicedefinition zu sehen, allerdings können sie weiterhin Requests für die Registrierung senden, ohne dass ein Fehler auftritt.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|remove-mandatory-field}{Feld aus Response entfernt}
+    (Intro.) REST & Nein & Wenn die Anzeige des Clients auf diesem Feld beruht, ist das Entfernen des Felds nicht abwärtskompatibel. Es ist unrealistisch, dass ein Client diese Änderung automatisch integriert.\\
+    GraphQL       & Nein & Ist das entfernte Feld im Selection-Set enthalten, schlägt die Validierung des Querys fehl.\\
+    gRPC          & Nein & Dem entfernten Feld wird der Standardwert, im Fall der E-Mail also ein leerer String, zugewiesen. Wird das Feld im Client verwendet, treten Fehler auf.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|rename}{Begriff umbenannt}
+    (Intro.) REST & Ja   & Bleiben die Bezeichnungen aller Link-Relations gleich, ist keine Anpassung der Clients erforderlich. In der NeverNote-API wird die Bezeichnung \enquote{Autor} nur in den URLs verwendet; die relevanten Link-Relations sind \textit{creator} bzw.\ \textit{contributors}. URLs können ohne Anpassungen geändert werden, solange Clients Hypermedia verwenden.\\
+    GraphQL       & Nein & Die Ersetzung des Begriffs \enquote{Autor} hat die Umbenennung einiger Felder zur Folge. Sind diese Felder im Selection-Set enthalten, schlägt die Validierung des Querys fehl.\\
+    gRPC          & Nein & Da gRPC-Methoden umbenannt werden, tritt ein \texttt{Unimplemented}-Fehler auf. Würden nur Nachrichten oder Felder umbenannt werden, kann die Kommunikation zwischen Client und Server trotz der Änderung stattfinden, solange die Struktur der Nachrichten gleich bleibt.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|add-non-nullable-field}{Feld zu Response hinzugefügt}
+    (Intro.) REST & Ja & Alle Clients sollten Felder, die sie nicht kennen, ignorieren \autocite[S.~223f]{Amundsen2017}.\\
+    GraphQL       & Ja & Das neue Feld wird nicht vom Server zurückgegeben, da es nicht im Selection-Set enthalten ist.\\
+    gRPC          & Ja & Das neue Feld wird nicht deserialisiert, der Client spürt also keine Änderung.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|add-publish-step}{Arbeitsschritt hinzugefügt}
+    (Intro.) REST & Ja & Alle bestehenden Clients funktionieren weiterhin. Suboptimale Clients müssen allerdings angepasst werden, um mit ihnen eine Notiz veröffentlichen zu können. Ein idealer Client kann dynamisch die zulässigen Aktionen anzeigen und einen \enquote{Veröffentlichen}-Button neben einer Notiz rendern.\\
+    GraphQL       & Ja & Bestehende Clients funktionieren weiterhin. Um allerdings eine Notiz veröffentlichen zu können, sind Anpassungen am Client erforderlich. Dynamisches Rendern der zulässigen Aktionen ist schwierig, da man mit Mutations keine Hierarchie bilden kann. Es ist also nicht bekannt, zu welchen Daten eine Aktion gehört.\\
+    gRPC          & Ja & Bestehende Clients funktionieren weiterhin. Um allerdings eine Notiz veröffentlichen zu können, muss die neue Servicedefinition geholt und implementiert werden.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|constrain-publish-step}{Arbeitsschritt beschränkt}
+    (Intro.) REST & Ja   & Der Server kontrolliert die zulässigen Zustandsübergänge. Wenn eine Notiz schon veröffentlicht wurde, sendet er das entsprechende Hypermedia-Element nicht. Ein Client kann diesen Status im Userinterface umsetzen.\\
+    GraphQL       & Nein & Das Schema ermöglicht es nur durch das Typsystem, Vorbedingungen für Mutations festzulegen. Dass ein Feld einen bestimmten Wert haben muss kann nicht deklariert werden. Die Mutation ist also immer noch syntaktisch korrekt, der Server gibt allerdings einen Fehler zurück.\\
+    gRPC          & Nein & Der Server gibt einen Fehler zurück, wenn die Vorbedingungen verletzt werden. Um den Client anzupassen, muss die Dokumentation befragt und die Businesslogik im Client hinterlegt werden.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|require-auth}{Autorisierung erforderlich}
+    (Intro.) REST & Ja   & Versucht eine Benutzerin oder ein Benutzer auf eine nicht veröffentlichte Notiz zuzugreifen, gibt der Server \texttt{403 Forbidden} oder \texttt{401 Unauthorized}. Beides sind bekannte HTTP-Status, folglich kann ein idealer Client damit umgehen. Fehlen die Anmeldeinformationen, könnte der Client ein entsprechendes Formular einblenden und den Request wiederholen. \\
+    GraphQL       & Nein & Verfügt eine Benutzerin oder ein Benutzer nicht über ausreichende Berechtigungen, wird entweder \inlinecode{null} oder eine Fehlermeldung für das entsprechende Feld zurückgegeben. Beide Fälle erfordern, dass die Logik im Client angepasst wird. Es gibt keine Standardfehlercodes für GraphQL.\\
+    gRPC          & Ja   & Der Server antwortet mit Fehler \texttt{UNAUTHENTICATED} oder \texttt{PERMISSION\_DENIED}. Ein idealer Client kann automatisch auf diese Fehler reagieren.\\[15pt]
+
+    \changeheading{itm:data-collection|evolvability|new-capability}{Neue API-Funktionalität hinzugefügt}
+    Int. REST & Ja & Der Server stellt einen neuen Microtype für das Filtern der Ergebnisse bereit. Clients, die den neuen Microtype unterstützen, können ihn mit dem Server aushandeln. Clients ohne Unterstützung funktionieren weiterhin.\\
+    REST      & Ja & Wird die neue Funktionalität in einem Mediatype umgesetzt (wie bei JSON:API), muss eine neue Version dessen geschaffen und vom Client ausgehandelt werden. Wird die neue Funktionalität durch Hypermedia ausgedrückt, kann ein idealer Client sich bei manchen Hypermediaelementen automatisch anpassen.\\
+    GraphQL   & Ja & Die neue Funktionalität wird ausgeprägt als optionales Argument eines Felds. Bestehende Clients funktionieren folglich weiterhin. Falls die möglichen Werte des Arguments im Typsystem kodiert werden, kann ein idealer Client das neue Feld automatisch rendern.\\
+    gRPC      & Ja & Bestehende Clients verwenden die neue Funktionalität zwar nicht, die Kommunikation mit dem Server funktioniert aber weiterhin.\\
+\end{tabularx}
+\endgroup
+
+\noindent{}Zählt man alle Jas zusammen, schneiden Introspected REST und REST sowie GraphQL und gRPC gleich gut ab, wobei Introspected REST/REST bei den untersuchten Änderungen eine bessere Evolvierbarkeit aufweisen als die beiden anderen API-Stile.
+
+\section{Komplexität}\label{sec:comparison|complexity}
+
+In \cref{sec:comp-criteria|complexity} wurde die Komplexität als Benutzerfreundlichkeit betrachtet. Es wurden Methoden zur Bewertung der Benutzerfreundlichkeit genannt und die Heuristische Evaluation für den Vergleich von Introspected REST mit alternativen API-Stilen ausgewählt. In diesem Abschnitt werden Heuristiken aufgestellt und die API-Stile hinsichtlich dieser bewertet.
+
+\para{}Myers und Stylos beschreiben sechs Eigenschaften von APIs, welche die Benutzbarkeit beeinflussen: Erlernbarkeit, Produktivität, Fehlervermeidung, Einfachheit, Konsistenz und Übereinstimmung mit mentalen Modellen der Benutzerinnen und Benutzer \autocite{Myers2016}. Die genannten Eigenschaften können sich gegenseitig beeinflussen.
+
+In den folgenden Abschnitten werden Heuristiken für die Eigenschaften Erlernbarkeit, Fehlervermeidung, Einfachheit und Konsistenz vorgestellt. Für jeden API-Stil wird daraufhin bewertet, wie gut er die jeweilige Heuristik umsetzt. Die verwendete Skala wurde in \cref{sec:comp-criteria|complexity} festgelegt. Für Produktivität sowie die Übereinstimmung der API mit mentalen Modellen konnten keine geeigneten Heuristiken gefunden werden oder diese wurden aus Platzgründen weggelassen.
+
+\subsection{Heuristiken für die Erlernbarkeit}
+Um die API für neue Benutzerinnen und Benutzer einfach erlernbar zu machen, sollten Hindernisse abgebaut, Feedback gegeben und die Möglichkeiten der API aufgezeigt werden. Weiterhin spielt die Konsistenz für die Erlernbarkeit eine Rolle.
+
+\subsubsection{Einfacher Einstieg}
+Der Benutzung der API sollten wenige Hindernisse im Weg stehen. Die Zeit, bis eine Benutzerin oder ein Benutzer den ersten Request senden kann, sollte möglichst klein gehalten werden. Der Einstiegspunkt der API sollte über die Möglichkeiten, welche die API bietet, informieren und dabei auf Ablenkung verzichten \autocite[S.~80]{Lidwell2010}.
+
+\para{}Für die Benutzung von Introspected REST, REST und GraphQL wird nur ein HTTP-Client benötigt. Ist dieser vorhanden, kann bei den beiden ressourcenorientierten API-Stilen sofort ein Request an den Einstiegsendpunkt gesendet werden. Welche Informationen die API im Response preisgibt, ist allerdings stark vom verwendeten Media-/Microtype abhängig. Eine REST-API könnte z.B.\ ein Home-Dokument (\autocite{Nottingham2017}) verwendet werden, welches sowohl allgemeine Informationen über die API als auch Links zu Ressourcen und möglichen Aktionen bereitstellt. Da aber REST und Introspected REST Architekturstile und keine Spezifikation sind, ist die Verwendung nicht vorgeschrieben. Wird HTTP als Protokoll verwendet, kann die API sicher, d.h.\ ohne unerwünschte Seiteneffekte, mit den \emph{sicheren Methoden} GET, HEAD und OPTIONS erkundet werden \autocite[Abs.~4.2.1]{RFC7231}.
+
+GraphQL-Services werden durch ein Schema beschrieben, welches durch Tools wie \textit{GraphiQL}\footnote{GraphQL IDE (Repository): \url{https://github.com/graphql/graphiql} (besucht am 07.09.2020)} oder den \textit{Altair GraphQL Client}\footnote{Altair GraphQL Client: \url{https://altair.sirmuel.design/} (besucht am 07.09.2020)} automatisch heruntergeladen wird. Derartige Tools zeigen die Felder an, welche die API anbietet. Damit kann die API sehr einfach erkundet werden. Durch die Konvention, dass Querys seiteneffektfrei sind, ermöglicht auch GraphQL eine sichere Erkundung.
+
+Für gRPC ist die Generierung des Client-Stubs ein notwendiger Schritt. Die Generierung erfolgt entweder händisch mit dem Protocol Buffer Compiler \textit{protoc} oder integriert in Build-Management-Tools wie \textit{Apache Maven}\footnote{Apache Maven Project: \url{https://maven.apache.org/} (besucht am 07.09.2020)} oder \textit{MSBuild}\footnote{Microsoft MSBuild: \url{https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild} (besucht am 07.09.2020)}. Beide Wege erfordern das Tätigwerden der Benutzerinnen und Benutzer vor der ersten eigentlichen Benutzung. Die Einstiegshürde wird dadurch erhöht. Ist der Client-Stub aber generiert, können die möglichen Operationen, die der Server ausführen kann, eingesehen werden. Viele Entwicklungsumgebungen bieten darüber hinaus auch Autovervollständigung an.
+
+\comptable{Einfacher Einstieg}{++}{++}{+++}{+}
+
+\subsubsection{Sichtbarkeit von Aktionen}
+Ein System sollte klar mögliche Aktionen sowie die Konsequenzen dieser darstellen. Menschen sind besser darin, eine Option von mehreren zu wählen, als sich ohne Gedankenstütze an die richtige Option zu erinnern \autocites[S.~178, 250]{Lidwell2010}[S.~129ff.]{Nielsen1994}.
+
+\para{}Mögliche Aktionen sichtbar zu machen ist die Aufgabe von Hypermedia in Introspected REST und REST. Je nach verwendeten Micro- und Mediatypes können Hypermedia-Elemente auch Hinweise auf die Konsequenzen, d.h.\ die Semantik eines Zustandsübergangs, geben. Durch die klar definierte Semantik der HTTP-Methoden, mit Ausnahme von POST, kann man die Auswirkungen eines Requests vorhersagen. Allerdings haben Benutzerinnen und Benutzer meist keine Informationen darüber, welche Struktur ein Response aufweist (kein Schema).
+
+In GraphQL und gRPC werden mögliche Aktionen durch das Schema bzw.\ die Schnittstellendefinition sichtbar. GraphQL bietet darüber hinaus eine Unterscheidung zwischen Querys und Mutations. Die Konsequenzen eines Querys sind, dass die Daten in der im Selection-Set angegebenen Form zurückgegeben werden, ohne Seiteneffekte. Mutations verfügen demgegenüber keine klare Semantik. Diese muss durch den Namen der Mutation deutlich gemacht werden. In gRPC ist es nur durch die Benennung möglich, die Semantik zum Ausdruck zu bringen. Deshalb sind die Konsequenzen der Aktionen nicht so gut sichtbar.
+
+\comptable{Sichtbarkeit von Aktionen}{++}{++}{++}{+}
+
+\subsubsection{Aussagekräftige Fehlermeldungen}
+Fehlermeldungen sollten in normaler Sprache formuliert werden, das Problem präzise beschreiben und Lösungsansätze vorschlagen \autocite[S.~142ff.]{Nielsen1994}.
+
+\para{}Introspected REST und REST verwenden HTTP-Statuscodes, um Fehler zu markieren. Diese sind vielen Webentwicklerinnen und -entwicklern bekannt. Weiterhin existiert mit \emph{Problem Details for HTTP APIs} (\autocite{RFC7807}) ein Standard, um detailliertere menschenlesbare Informationen über einen Fehler in den Response zu integrieren. Introspected REST ermöglicht es zusätzlich, den verwendeten Fehler-Microtype zu verhandeln.
+
+GraphQL-Fehlermeldungen zielen darauf ab, von Menschen gelesen zu werden: \foreigntextcquote{english}{Facebook2018}[.]{Every error must contain an entry with the key message with a string description of the error intended for the developer as a guide to understand and correct the error} gRPC verfügt über wohldefinierte Statuscodes\footnotemark{} für verschiedene Situationen. Zusätzlich können menschenlesbare Beschreibungen der Fehler angefügt werden. Kein API-Stil erzwingt die Erstellung aussagekräftiger Fehlermeldungen.
+
+\footnotetext{Status codes and their use in gRPC\@: \url{https://grpc.github.io/grpc/core/md_doc_statuscodes.html} (besucht am 10.09.2020)}
+
+\comptable{Aussagekräftige Fehlermeldungen}{+}{+}{++}{+}
+
+\subsubsection{Hilfreiche Dokumentation}
+Zwar ist es besser, wenn Benutzerinnen und Benutzer nicht auf die Dokumentation zurückgreifen müssen. Trotzdem sollte diese vorhanden sein, falls Hilfe benötigt wird \autocite[S.~148ff.]{Nielsen1994}.
+
+\para{}Für Introspected-REST- und REST-APIs besteht die Dokumentation hauptsächlich aus der Beschreibung der Micro- bzw. Mediatypes und der Zustandsübergänge. Fielding formuliert es wie folgt:
+
+\begin{foreigndisplaycquote}{english}{Fielding2008}[.]
+    A REST API should spend almost all of its descriptive effort in defining the media type(s) used for representing resources and driving application state, or in defining extended relation names and/or hypertext-enabled mark-up for existing standard media types
+\end{foreigndisplaycquote}
+
+\noindent{}Im Gegensatz zu anderen HTTP-APIs müssen keine HTTP-Methoden oder URLs beschrieben werden, da diese Informationen in Hypermedia-Elementen eingebettet sind. Die verfügbaren Mediatypes für REST-APIs bleiben allerdings meist hinter der Erwartung zurück, umfangreiche Informationen über einen Request, den der Client senden kann, zu liefern. Beispielsweise ist es in \emph{HAL} \autocite{Kelly2016} nicht möglich, die HTTP-Methode einer Aktion anzugeben. Auch gibt es keine Möglichkeit, den Payload eines POST- oder PUT-Requests zu beschreiben. Dafür werden durch \emph{Compact URIs} (CURIEs) \autocite{Birbeck2010} Links zur Dokumentation einer Link-Relation zur Verfügung gestellt, sodass Benutzerinnen und Benutzer auf diese Weise an die benötigten Informationen kommen. Mediatypes wie \emph{Siren}\footnote{Siren: A Hypermedia Specification for Representing Entities (Repository): \url{https://github.com/kevinswiber/siren} (besucht am 07.09.2020)} verfügen über die Möglichkeit, menschenlesbare Beschreibungen der Relations zu Links und Actions hinzuzufügen. \emph{Profiles} ermöglichen es, erweiterte Informationen über die Semantik einer API zur Verfügung zu stellen. Diese zielen aber vor allem auf die Maschine-zu-Maschine-Kommunikation ab \autocite{RFC6906}. Im Allgemeinen gibt es keinen einheitlichen Standard oder Tooling für die Dokumentation von REST-APIs.
+
+Ähnlich wie bei REST verhält es sich auch bei Introspected REST. Zusätzlich dokumentiert werden müssen hier die einzelnen Microtypes und deren Konfigurationsmöglichkeiten. Die einzelnen Optionen können zwar durch Introspection abgefragt werden, doch muss eine Möglichkeit geschaffen werden, die Semantik zu definieren.
+
+In GraphQL werden Kommentare in der Schemadefinition bei vielen Tools als Dokumentation zur Verfügung gestellt, sodass die einzelnen Felder und Argumente aussagekräftig beschrieben werden können. Darüber hinaus besteht kaum Bedarf an einer Dokumentation, da viele Anliegen in der GraphQL-Spezifikation festgelegt oder durch einen GraphQL-Client übernommen werden.
+
+Auch in gRPC werden Kommentare als Dokumentation der generierten Klassen und Methoden verwendet. Somit ist es aus der IDE heraus möglich, Informationen über die Semantik abzufragen. Die Signatur der Methoden wird in der Schnittstellendefinition festgelegt, sodass keine Dokumentation in Prosaform nötig ist.
+
+\comptable{Hilfreiche Dokumentation}{++}{++}{+++}{+++}
+
+\subsection{Heuristiken für das Vorbeugen von Fehlern}
+Eine API sollte so entworfen werden, dass es schwierig ist, sie falsch zu benutzen. Fehleranfällige Situationen sollten eliminiert oder vorher durch die Benutzerin oder den Benutzer explizit bestätigt werden \autocite{Nielsen1994}. Die API sollte Benutzerinnen und Benutzer hin zur korrekten Benutzung führen \autocite{Myers2016}.
+Bloch formuliert es wie folgt:
+
+\begin{foreigndisplaycquote}{english}{Bloch2006}[.]
+    APIs should be easy to use and hard to misuse. It should be easy to do simple things; possible to do complex things; and impossible, or at least difficult, to do wrong things
+\end{foreigndisplaycquote}
+
+\subsubsection{Ungültige Eingaben vermeiden}
+Das Prinzip \emph{Garbage In, Garbage Out} besagt, dass ungültige Eingaben meist zu schlechten Ausgaben führen. Deshalb ist es wichtig, ungültige Eingaben von vornherein möglichst zu vermeiden \autocite[S.~112]{Lidwell2010}.
+
+\para{}Für Introspected-REST- und REST-APIs ist ein Schema nicht verpflichtend. Folglich kann es APIs geben, in welchen keine clientseitige Validierung der Eingaben vorgenommen werden kann, da der Client die Erwartungen des Servers nicht kennt. Für beide API-Stile könnte ein \textit{OpenAPI}-Dokument\footnotemark{} zur Verfügung gestellt werden, in welchem Requests und Responses genau beschrieben werden. Ebenfalls können geeignete Micro- und Mediatypes durch Introspection bzw. durch Hypermedia-Elemente entsprechende Informationen bereitstellen, z.B.\ JSON Schema \autocites{JsonSchemaCore}{JsonSchemaValidation}. Durch Microtypes wird es aber vereinfacht, ein Schema für die API herauszugeben, da solch ein Microtype nur einmal definiert und dann in Kombination mit anderen Microtypes verwendet werden kann. Monolithische Mediatypes erfordern, dass die Festlegung der Art, wie ein Schema ausgeliefert werden soll, in der Spezifikation des Mediatypes erfolgt.
+
+\footnotetext{OpenAPI Initiative: \url{https://www.openapis.org/} (besucht am 10.09.2020)}
+
+Sowohl GraphQL als auch gRPC legen genau fest, welche Ein- und Ausgaben erwartet werden. Dadurch können fehlerhafte Eingaben schon im Client erkannt werden. Durch das Typsystem kann vermieden werden, dass illegale Zustände überhaupt erzeugt werden.
+
+\comptable{Ungültige Eingaben vermeiden}{+}{-}{+++}{+++}
+
+\subsubsection{Beschränkung der zulässigen Aktionen}
+Durch Beschränkungen werden die möglichen Interaktionen mit einem System begrenzt, wenn diese im aktuellen Zustand nicht zur Verfügung stehen. Es werden potentielle Fehlerquellen reduziert, da Benutzerinnen und Benutzer nicht versuchen, solch unzulässige Interaktionen auszuführen \autocite[S.~60]{Lidwell2010}.
+
+\para{}In Introspected REST und REST ist es möglich, Links zu zulässigen Aktionen anhand des aktuellen Status ein- und auszublenden. Verfügt eine Benutzerin oder ein Benutzer bspw.\ nicht über die nötigen Berechtigungen, um eine Ressource anzufragen, kann der Link zu dieser Ressource einfach nicht gesendet werden.
+
+In Introspected REST ist darauf zu achten, dass die Berechtigungen auch für Introspection-Requests überprüft werden. Probleme bereiten Listen in Introspected REST, wenn einzelne Elemente unterschiedliche Zugriffsberechtigungen erfordern, da der Introspection-Response meist für alle Elemente gilt.
+
+In GraphQL ist es nicht möglich, unzulässige Aktionen zu verbergen. Stattdessen wird z.B.\ \inlinecode{null} oder eine Fehlermeldung zurückgegeben. In gRPC antwortet der Server mit dem Fehlercode 7 \texttt{PERMISSION\_DENIED}.
+
+\comptable{Beschränkung zulässiger Aktionen}{++}{+++}{-}{-}
+
+\subsection{Heuristiken für Einfachheit}
+Einfachheit ist wahrscheinlich die Eigenschaft, die am stärksten mit Benutzerfreundlichkeit verbunden ist und generell als Gegensatz zur Komplexität angesehen wird. Die API sollte über den benötigten Funktionsumfang, trotzdem aber über eine einfache Schnittstelle verfügen.
+
+\subsubsection{So klein wie möglich, so groß wie nötig}
+Die API sollte keine irrelevanten Informationen liefern und generell so klein und einfach gehalten sein wie möglich. Weniger ist mehr \autocites{Myers2016}[S.~115ff.]{Nielsen1994}.
+
+\para{}Durch die Trennung von Nutz- und Metadaten sowie Content-Negotiation ermöglicht Introspected REST den Clients, relativ genau die gewünschten Informationen auszuwählen. Bei GraphQL bekommen Clients exakt die Daten zurück, welche sie auswählen. REST und gRPC bieten solche Möglichkeiten nicht.
+
+\comptable{So klein wie möglich}{++}{-}{+++}{-}
+
+\subsubsection{Kleine Arbeitsschritte}
+Benutzerinnen und Benutzer sollten nur kleine und lokale Änderungen durchführen müssen, um ein Ziel zu erreichen \autocite{Clarke2003}. Andererseits erhöht sich mit der Anzahl der Schritte, die zur Bewältigung einer Aufgabe durchgeführt werden müssen, auch die \emph{kinematische Belastung} \autocite[S.~178]{Lidwell2010}.
+
+\para{}Mit Introspected REST und REST können komplexe Workflows in kleine Schritte aufgeteilt werden. Den nächsten Schritt erreicht man durch Auslösen eines Hypermediaelements. Eine fortgeschrittene Technik ist das Partial-Submit-Pattern \autocite{Amundsen2016}. Die kinematische Belastung wird in Introspected REST erhöht, da zusätzliche Requests für Introspection nötig sind. Ebenfalls erfolgt ggf.\ eine reaktive Content-Negotiation, welche nochmals zusätzlichen Aufwand bedeutet.
+
+In GraphQL und gRPC könnten Workflows zwar durch die Hintereinanderausführung mehrerer Mutations bzw.\ Methoden umgesetzt werden, allerdings ist dieser Prozess fehleranfällig, da der Server den Prozess nicht lenken kann. In GraphQL und gRPC sind komplexe Workflows generell sehr selten vorzufinden.
+
+\comptable{Kleine Arbeitsschritte}{++}{++}{-}{-}
+
+\subsubsection{Layering}
+Indem Informationen in Schichten organisiert werden, verbessert sich die Benutzbarkeit. Beispielsweise können nur bestimmte Schichten oder Gruppierungen zu einem Zeitpunkt angezeigt werden, sodass der Fokus auf das Wesentliche gelenkt wird. Durch Schichten können Details verborgen werden \autocite[S.~146]{Lidwell2010}.
+
+\para{}Introspected REST und REST ermöglichen Layering durch Links. Ein Übersichts-Zustand kann auf detailreichere Zustände verweisen und gleichzeitig durch die Link-Relation diese Zustände allgemein beschreiben. Beispielsweise kann eine Liste an Notizen nur die wichtigsten Informationen wie ID und Titel darstellen, aber auch einen Link zur Detailansicht einer Notiz bereitstellen. Befindet sich der Client in der Detailansicht, werden gerade nicht benötigte Informationen ausgeblendet.
+
+Layering findet bei GraphQL während der Auswahl der benötigten Daten statt. Objekte dienen als Container für ihre Felder und ermöglichen den Benutzerinnen und Benutzern, abstrakt über diese Dinge nachzudenken. Trotzdem bleiben alle Felder des Selection-Sets sichtbar. In gRPC findet Layering nicht statt.
+
+\comptable{Layering}{+++}{+++}{+}{-}
+
+\subsection{Heuristiken für Konsistenz}
+Norman argumentiert, dass Komplexität der Welt inhärent und deshalb weder gut noch schlecht ist. Komplexität soll nicht verringert, sondern organisiert werden. Man muss die Verständlichkeit (engl.: \textit{understandability}) verbessern und Unordnung (engl.: \textit{confusion}) vermeiden. Das System muss dafür eine logische Struktur aufweisen und einfach erlernbar sein \autocite{Norman2011}. Damit das Erlernte auch angewendet werden kann, ist es wichtig, die API konsistent zu halten. Die Konsistenz wird dabei stark von den Entwicklerinnen und Entwicklern der API beeinflusst, bspw.\ durch eine konsistente Namensgebung. Aber auch der API-Stil kann darauf Einfluss nehmen.
+
+\subsubsection{Erwartungen erfüllen}
+Wenn die Erwartungen der Benutzerinnen und Benutzer erfüllt und Überraschungen vermieden werden, können diese ihr vorhandenes Wissen anwenden und das Vertrauen in die API steigt \autocite[S.~132ff.]{Nielsen1994}. Sie können explorativ auf die Interaktionsweise schließen, ohne die Dokumentation bemühen zu müssen, und die API so selbst erkunden.
+
+\para{}Introspected REST und REST bieten zwar die Möglichkeit, Hinweise über die Erwartungen durch Hypermedia-Elemente zu kommunizieren, allerdings ist ein Server nicht gezwungen, die Erwartungen zu erfüllen. Überraschungen sind somit möglich.
+
+Durch Content-Negotiation für Microtypes können Clients bei Introspected REST genauer als bei REST spezifizieren, welche Daten sie erhalten möchten und welches Format diese haben sollen. Unterstützt der Server die entsprechenden Microtypes, können Clients somit genauer ihre Erwartungen spezifizieren. In REST hängt es stark vom verwendeten Mediatype ab, wie genau die Erwartungen sein können.
+
+GraphQL zielt darauf ab, den Benutzerinnen und Benutzern genau die Daten zurückzugeben, welche sie anfordern. Damit können jene ihre Erwartungen genau formulieren und diese werden erfüllt, sollte kein Fehler auftreten.
+
+In gRPC werden die Erwartungen durch die Schnittstellendefinition festgelegt, welche der Server erfüllen muss.
+
+\comptable{Erwartungen erfüllen}{++}{+}{+++}{++}
+
+\subsubsection{Wiedererkennbare Muster}
+Wiedererkennbare Muster kommunizieren eine bereits bekannte Struktur. Benutzerinnen und Benutzer können so bereits Erlerntes anwenden und die Einarbeitungszeit verringern \autocite[S.~14f.]{Tidwell2011}.
+
+\para{}Microtypes ermöglichen ein Feature-Ökosystem für APIs (vgl. \Cref{subsec:intrest|theory|microtypes}). Idealerweise werden Microtypes für verschiedene Funktionalitäten standardisiert und von vielen APIs verwendet. Durch die Standardisierung wird vermieden, dass gleiche Funktionalitäten eine vollkommen verschiedene Schnittstelle aufweisen. Indem Introspected-REST-APIs die gleichen Microtypes verwendet, können sich Benutzerinnen und Benutzer an diese Muster gewöhnen.
+
+In REST gibt es Muster, die allerdings nur als Anhaltspunkte für API-Designerinnen und -Designer dienen. Als Beispiel sei die Auflistung von Bishop\footnote{Matt Bishop. \textit{Patterns \textendash{} Level 3 REST}: \url{https://level3.rest/patterns} (besucht am 07.09.2020)} genannt. REST und Introspected REST verwenden beide oft das bekannte HTTP-Protokoll und die darauf aufbauende Infrastruktur. Es gibt viele Standards, z.B.\ für Authentifizierung oder Fehlermeldungen. Verschiedene Mediatypes geben einer API mal mehr, mal weniger Vorgaben, sodass die Wiedererkennbarkeit abhängig von diesem ist. Für alle APIs, welche HAL verwenden, kann bspw.\ ein generischer Client, der \textit{HAL-Browser}\footnote{HAL-Browser (Repository): \url{https://github.com/mikekelly/hal-browser} (besucht am 07.09.2020)}, verwendet werden.
+
+Da GraphQL eine detaillierte Spezifikation ist, sind alle APIs sehr einheitlich. Benutzerinnen und Benutzer, die Erfahrung mit GraphQL haben, finden sich in einer anderen GraphQL-API prinzipiell sofort zurecht. Der Bedarf an API-übergreifenden Pattern ist dadurch geringer. Trotzdem existieren einige, bspw.\ für \emph{Global Object Identification} \autocite{LearnGraphQL_Identification}, um Caching durch GraphQL-Clients wie \textit{Relay}\footnote{Relay \textendash{} The production-ready GraphQL client for React: \url{https://relay.dev/} (besucht am 07.09.2020)} oder \textit{Apollo Client}\footnote{Apollo Client (React): \url{https://www.apollographql.com/docs/react/} (besucht am 07.09.2020)} zu ermöglichen \autocite{LearnGraphQL_Identification}.
+
+In gRPC existieren wenige Muster bzw.\ Best Practices. Allerdings zieht sich durch den gesamten Service \textit{ein} wiedererkennbares Muster: Es wird eine Methode mit den benötigten Parametern aufgerufen und es wird eine Antwort zurückgegeben, ggf.\ als Stream. Der Client-Stub kann in vielen Programmiersprachen generiert werden. Somit können Benutzerinnen und Benutzer ihr bereits vorhandenes Wissen nutzen. Außerdem verwendet der generierte Code bspw.\ in \csharp{} idiomatische Konstrukte der Programmiersprache \autocite[06:42--17:56]{Shirhatti2020}.
+
+\comptable{Wiedererkennbare Muster}{++}{+}{+++}{+}
+
+\subsection{Zusammenfassung}
+In diesem Abschnitt wurden Heuristiken für die Benutzbarkeit einer API aus Sicht einer Cliententwicklerin oder eines Cliententwicklers aufgestellt. Diese Heuristiken wurden auf die untersuchten API-Stile angewandt und es wurde eine Bewertung durchgeführt. Die Ergebnisse sind in \cref{tab:comparison|complexity|results} zusammengefasst.
+
+\begin{table}[htb]
+    \begin{tabularx}{\linewidth}{ l c c c c }
+        & Int. REST & REST & GraphQL & gRPC\\
+        \midrule
+        \comprow{Einfacher Einstieg}{++}{++}{+++}{+}
+        \comprow{Sichtbarkeit von Aktionen}{++}{++}{++}{+}
+        \comprow{Aussagekräftige Fehlermeldungen}{+}{+}{++}{+}
+        \comprow{Hilfreiche Dokumentation}{++}{++}{+++}{+++}
+        \comprow{Ungültige Eingaben vermeiden}{+}{-}{+++}{+++}
+        \comprow{Beschränkung zulässiger Aktionen}{++}{+++}{-}{-}
+        \comprow{So klein wie möglich}{++}{-}{+++}{-}
+        \comprow{Kleine Arbeitsschritte}{++}{++}{-}{-}
+        \comprow{Layering}{+++}{+++}{+}{-}
+        \comprow{Erwartungen erfüllen}{++}{+}{+++}{++}
+        \comprow{Wiedererkennbare Muster}{++}{+}{+++}{+}
+    \end{tabularx}
+    \centering
+    \caption{Zusammenfassung der heuristischen Bewertung der API-Stile}
+    \label{tab:comparison|complexity|results} % chktex 24
+\end{table}

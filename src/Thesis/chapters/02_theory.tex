@@ -1,0 +1,160 @@
+% !TeX root = ../main.tex
+\chapter{Grundlagen von Web-APIs}\label{ch:theory}
+
+APIs (Application Programming Interfaces, deutsch: \textit{Programmierschnittstellen}) sind ein wesentlicher Bestandteil der modernen Softwareentwicklung. Sie ermöglichen es, Services für andere Entwicklerinnen und Entwickler zur Verfügung zu stellen, welche wie Lego-Bausteine zusammengesetzt werden können. Somit tragen APIs zu einer effizienteren Softwareentwicklung bei. In diesem Kapitel werden die Grundlagen vorgestellt, die zum Verständnis der darauffolgenden Kapitel relevant sind. Zuerst erfolgt eine allgemeine Einführung von Web-APIs. Im Anschluss daran werden die drei heutzutage hauptsächlich verwendeten API-Stile vorgestellt: REST, GraphQL und gRPC \autocite[S.~300]{Lauret2019}.
+
+\section{Definition und Einteilung}\label{sec:theory|definition-classification}
+Eine \textbf{API} ist eine Schnittstelle eines Softwaremoduls oder -systems, welche es anderer Software ermöglicht, mit diesem Modul oder System zu interagieren. APIs abstrahieren die Interna der bereitstellenden Software \autocite[S.~1]{Jin2018}. Sie ermöglichen die Wiederverwendung von Funktionalität.
+
+\textbf{Web-APIs} sind APIs, welche von Webservern bereitgestellt werden \autocite{Wiki:WebAPI}. Sie folgen dem Client-Server-Prinzip, verbinden also zwei eigenständige Softwaresysteme lose miteinander. Eine Web-API ermöglicht es dem Client, mit dem Server zu kommunizieren und so die vom Server bereitgestellte Funktionalität zu nutzen. Die API legt dabei fest, \emph{wie} beide Parteien miteinander kommunizieren, bildet also einen Vertrag zwischen beiden \autocite[S.~4--5]{Jacobson2011}. Meist erfolgt die Kommunikation zwischen Client und Server via HTTP\@. Wenn nicht anders erwähnt, bezieht sich der Begriff \enquote{API} im Folgenden immer auf Web-APIs. Im weiteren Sinne umfasst der Begriff manchmal auch das gesamte Backend.
+
+\para{}Web-APIs lassen sich nach dem verwendeten Interaktionsmuster in Request-Response-APIs und Event-Driven-APIs einteilen. Bei \textbf{Request-Response-APIs} definiert der Server Endpunkte, welche durch eine URL identifiziert werden. Ein Client sendet eine Anfrage an einen dieser Endpunkte und der Server gibt eine Antwort zurück. Derartige APIs lassen sich mit REST, RPC und GraphQL umsetzen \autocite[S.~9]{Jin2018}. \textbf{Event-Driven-APIs} informieren einen Client, sobald ein Ereignis aufgetreten ist, z.B.\ eine Änderung an einem Datensatz. Der Server sendet potentiell unendlich viele Antworten an den Client \autocite[S.~19]{Jin2018}. GraphQL \autocite[S.~31]{Porcello2018} und gRPC \autocite[S.~2]{Indrasiri2020} bieten von Haus aus die Möglichkeit, Event-Driven-APIs zu erstellen. In dieser Arbeit werden nur Request-Response-APIs betrachtet.
+
+Eine weitere mögliche Unterteilung ist nach der Zielgruppe in Public-APIs und Private-APIs. \textbf{Public-APIs} sind für fast jeden zugänglich und nutzbar und es gibt meist keine vertraglichen Regelungen zwischen dem Anbieter und dem Nutzer bis auf die Nutzungsbedingungen. \textbf{Private-APIs} hingegen sind nur für interne Angestellte und ggf.\ Partner des Anbieters zugänglich \autocite[S.~7]{Jacobson2011}. Laut Mitra ist das Ziel für Anbieter von Public-APIs eine weite Verbreitung und häufige Nutzung der API. Private-APIs sollen vor allem zu Kosteneinsparungen führen, z.B.\ bei der Entwicklung neuer Endanwendungen \autocite[06:47--07:03]{Mitra2013}. Nach Jacobson et al.\ können durch Private-APIs vor allem höhere Effizienz bei der Entwicklung von Anwendungen und eine bessere Nutzung des vorhandenen immateriellen Vermögens, z.B.\ des Datenbestands, erreicht werden \autocite[S.~27]{Jacobson2011}.
+
+\section{Der Architekturstil Representational State Transfer (REST)}\label{sec:theory|rest}
+
+\textbf{Representational State Transfer (REST)} ist ein Architekturstil für verteilte Hypermedia"=Systeme, welcher im Rahmen der Spezifikation des HTTP-Protokolls erarbeitet wurde und als Richtlinie für die Weiterentwicklung des World Wide Webs diente \autocite{Fielding2017}. Später wurde REST auf Web-APIs übertragen und ist heute der am weitesten verbreitete API-Stil \autocite[S.~10]{Jin2018}.
+
+In diesem Abschnitt werden die grundlegenden Bausteine des Webs \textendash{} und damit auch von REST \autocite[S.~12]{Webber2010} und Introspected REST \textendash{} erläutert. Danach werden die REST-Prinzipien eingeführt, welche obligatorisch für eine REST-Architektur sind. Zum Schluss wird die Interaktion zwischen Client und Server beschrieben.
+
+\subsection{Grundlagen des Webs}
+Das World Wide Web (kurz: Web) ist ein verteiltes Hypertext-System nach dem Client-Server-Prinzip \autocite{BernersLee1989}. Durch Hypermedia verbindet es Ressourcen, welche durch eine URI identifiziert werden, untereinander.
+
+\subsubsection{Ressourcen und Repräsentationen}
+Das Web ermöglicht den Zugriff auf Ressourcen eines Servers über standardisierte Protokolle. Berners-Lee et al.\ definieren \textbf{Ressourcen} als \foreigntextcquote{english}[][Kap.~1]{WebArch}{items of interest}, d.h.\ beliebige konzeptuelle oder physische Dinge, auf welche verwiesen oder zugegriffen werden soll. Beispiele für Ressourcen sind eine Webseite, ein Gebäude, die Farbe Schwarz und die Beziehung zwischen Mutter und Kind. Da Ressourcen von zentraler Bedeutung für das Web sind, wird dieses auch als \emph{ressourcenorientiert} bezeichnet. Selbiges gilt für REST-Architekturen \autocite[S.~4]{Webber2010}.
+
+Eine Ressource wird identifiziert durch einen \textbf{Uniform Resource Identifier (URI)}. Eine URI ist eine Zeichenfolge, welche der Grammatik in RFC 3986 entspricht \autocite{RFC3986}. URIs ermöglichen das Teilen von Informationen mit Dritten \autocite[Kap.~2]{WebArch} sowie den Verweis auf andere Ressourcen, eingebettet in eine Repräsentation, durch Hyperlinks \autocite[Abs.~4.4]{WebArch}.
+
+Wenn ein Client einer URI folgt, erhält er eine \textbf{Repräsentation}. Eine Repräsentation enthält Informationen über die durch die URI identifizierte Ressource \autocite[Abs.~3.2]{WebArch} oder andere Informationen wie etwa eine Fehlermeldung \autocite[S.~91]{Fielding2000}. Da eine Ressource mehrere Repräsentationen haben kann, können verschiedene Clients durch Content-Negotiation die für sie geeignetste Repräsentation auswählen \autocite[Abs.~3.4]{RFC7231}.
+
+Das Datenformat einer Repräsentation wird in einem \textbf{Mediatype} spezifiziert \autocite{RFC2046}. Um eine Repräsentation verarbeiten zu können, muss ein Client den zugrundeliegenden Mediatype kennen \autocite[S.~358]{Richardson2013}. HTML bzw.\ \mediatype{text/html} ist ein Mediatype für strukturierte Dokumente \autocite{RFC2854}. JSON bzw.\ \mediatype{application/json} ist ein Mediatype für den Datenaustausch \autocite{RFC8259} und findet vor allem bei Web-APIs Verwendung. \cref{fig:web-architecture} verdeutlicht das Zusammenspiel von Ressourcen, URIs, Repräsentationen und Mediatypes.
+
+\begin{figure}
+    \centering
+    \includegraphics{webarch.pdf}
+    \caption{Beziehung zwischen Ressource, URI, Repräsentation und Mediatype (nach \autocite[Kap.~1]{WebArch})}
+    \label{fig:web-architecture} % chktex 24
+\end{figure}
+
+\subsubsection{Hypermedia}
+\textbf{Hypermedia} bezeichnet Metadaten, welche Beziehungen zwischen Ressourcen beschreiben und dem Client dadurch Informationen über die Interaktionsmöglichkeiten mit dem Server geben \autocite[S.~45]{Richardson2013}. Hypermedia wird ausgedrückt durch Hypermedia"=Elemente, welche im verwendeten Mediatype spezifiziert sind. Wird ein Hypermedia"=Element ausgelöst, findet eine Interaktion mit dem Server statt. Die Semantik der Interaktion wird durch das Hypermedia"=Element definiert. Beispielsweise kann dieses implizite oder explizite Möglichkeiten bieten, um das Link-Modell von RFC 8288 (\autocite[Abs.~2]{RFC8288}) abzubilden. So impliziert ein \inlinecode{<a>}-Tag in HTML einen HTTP-GET-Request, wobei \textit{Link-Relation-Type} und \textit{Link-Target} durch die HTML-Attribute \inlinecode{rel} und \inlinecode{href} explizit festgelegt werden.
+
+\para{}Nach Richardson und Amundsen erfüllen Hypermedia-Elemente drei Aufgaben:
+
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item Sie geben einem Client Hinweise zum Senden eines Requests. Beispielsweise legt der \inlinecode{<a>}-Tag in HTML die HTTP-Methode und die URL des Requests fest.
+    \item Sie geben einem Client Hinweise zur zu erwartenden Antwort. Beispielsweise kann der \inlinecode{<a>}-Tag den Mediatype der Antwort spezifizieren.
+    \item Sie teilen einem Client mit, wie er die Antwort in seinen Arbeitsablauf integrieren kann. Das bedeutet, dass der Server dem Client durch Hypermedia-Elemente Hinweise gibt, welche Requests er als nächstes Stellen könnte \autocite[S.~52]{Richardson2013}.
+\end{itemize}
+Der letzte Punkt beschreibt Hypermedia-Elemente als \emph{Affordances} (deutsch: \textit{Angebotscharakter}), durch welche sich ein Client für die nächste Aktion entscheiden kann \autocite{Fielding2008}. Gibson beschreibt Affordances wie folgt, ohne dabei das Web im Sinn zu haben:
+
+\begin{foreigndisplaycquote}{english}[][S.~127, Hervorheb.\ im Original]{Gibson1979}[.]
+    The \emph{affordances} of the environment are what it \emph{offers} \textins{\dots}, what it \emph{provides} or \emph{furnishes}, either for good or ill
+\end{foreigndisplaycquote}
+
+\subsection{REST-Prinzipien}
+REST definiert sechs Prinzipien (engl.: \textit{Constraints}) für die Architektur verteilter Hypermedia"=Anwendungen. Diese wurden von Roy T. Fielding formuliert, um durch die Softwarearchitektur Eigenschaften zu realisieren, welche für ein System ähnlich des Webs wünschenswert sind \autocite[S.~341]{Richardson2013}. Diese erwünschten Eigenschaften sind:
+
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item eine niedrige Einstiegshürde, um eine ausreichende Anzahl an Nutzern zu erreichen
+    \item Erweiterbarkeit, um auf sich verändernde Anforderungen reagieren zu können
+    \item Nutzung von Hypermedia, damit nicht nur Daten, sondern auch Steuerinformationen, welche Zustandsübergänge und Ressourcenmanipulationen beschreiben, vom Server verwaltet werden können
+    \item Skalierbarkeit, um Informationen über Organisationsgrenzen hinweg austauschen zu können \autocites[S.~66--71]{Fielding2000}[S.~342--344]{Richardson2013}
+\end{itemize}
+Die REST-Prinzipien wurden später auf Web-APIs angewendet. Während sich aber die erwünschten Eigenschaften im Web gegenseitig ergänzen, stehen sie bei Web-APIs im Gegensatz zueinander, denn das Web ist für Maschine-zu-Mensch-Kommunikation gedacht, Web-APIs aber für die Machine-zu-Maschine-Kommunikation. Für Maschinen ist es schwieriger, die Bedeutung von Hypermedia-Elementen zu verstehen, und ein Mensch wird benötigt, um zu entscheiden, welcher Zustandsübergang gewählt werden soll. Die Nutzung von Hypermedia erhöht folglich die Einstiegshürde. Der Verzicht von Hypermedia geht indes auf Kosten der Erweiterbarkeit und Skalierbarkeit \autocite[S.~344f.]{Richardson2013}.
+
+Entwicklerinnen und Entwickler von öffentlichen APIs mit vielen nicht unter derer Kontrolle stehenden Clients müssen sich entscheiden zwischen Einfachheit und Erweiterbarkeit. Einfachheit erreichen sie, indem Steuerinformationen durch einen Menschen anhand einer Dokumentation im Client kodiert werden. Erweiterbarkeit erreichen sie durch die Nutzung von Hypermedia. Stehen alle Clients unter ihrer Kontrolle, ist die API nicht skalierbar, dafür kann aber Einfachheit durch Verzicht auf Hypermedia erreicht werden, während Erweiterbarkeit immer noch gewährleistet ist, indem alle Clients auf einmal angepasst werden \autocite[S.~345]{Richardson2013}.
+
+\para{}Im Folgenden werden die REST-Prinzipien beschrieben, welche zur Realisierung der genannten Eigenschaften beitragen.
+
+\subsubsection{Client-Server}
+Eine Client-Server-Architektur besteht aus einem Server, welcher einen oder mehrere Dienste bereitstellt, und einem Client, welcher diese Dienste nutzen kann. Client und Server kommunizieren durch den Austausch von Nachrichten \autocite[Abs.~1.3.]{Bass2012}, wobei der Client eine Anfrage (engl.: \textit{Request}) an den Server sendet und dieser eine Antwort (engl.: \textit{Response}) zurückschickt \autocite[S.~45f., 78]{Fielding2000}.
+
+\subsubsection{Zustandslose Kommunikation}
+Das Prinzip der zustandslosen Kommunikation besagt, dass der Client nicht davon ausgehen darf, dass der Server clientspezifische Informationen über die aktuelle Sitzung verfügt. Stattdessen muss die Anfrage eines Clients selbst alle Informationen beinhalten, welche der Server benötigt, um die Anfrage zu bearbeiten \autocite[S.~47, 78f.]{Fielding2000}. Der Zustand der Sitzung wird auf dem Client gespeichert \autocite[Abs.~2.2]{Tilkov2015}. Jede Anfrage ist unabhängig von allen anderen \autocite[S.~349]{Richardson2013}.
+
+\subsubsection{Caching}
+Durch das Caching-Prinzip kann ein Cache als zusätzliche Komponente zwischen Client und Server eingefügt werden und die Antworten auf Anfragen eines oder mehrerer Clients speichern kann. Anfragen, für welche der Cache die Antworten gespeichert hat, können durch den Cache beantworten werden. Nur Anfragen, deren Antwort noch nicht gecacht wurde, werden an den Server weitergeleitet \autocite[S.~44, 48, 79f.]{Fielding2000}. Dieses Prinzip wird ermöglicht durch zustandslose Kommunikation und selbstbeschreibende Nachrichten, da die Anfrage des Clients unabhängig von vorherigen Anfragen ist und die gecachte Antwort des Servers alle notwendigen Informationen enthält.
+
+\subsubsection{Einheitliche Schnittstelle}
+Das Prinzip der einheitlichen Schnittstelle besagt, dass Client und Server anhand eines standardisierten Vertrags kommunizieren und sich bspw.\ an die Semantik des verwendeten Protokolls (etwa HTTP) und des Mediatypes halten. Eine einheitliche Schnittstelle ist nicht ressourcenspezifisch, sondern generisch \autocite{Fielding2008}. Dieses Prinzip impliziert selbst vier weitere Prinzipien:
+
+\begin{itemize}
+    \item \itemname{Adressierbarkeit von Ressourcen:} Jede Ressource wird durch eine URI identifiziert. Die URI bleibt gleich, auch wenn sich der Zustand der Ressource ändert.
+    \item \itemname{Manipulation von Ressourcen durch Repräsentationen:} Möchte ein Client eine Ressource auf dem Server verändern, schickt er eine Repräsentation zum Server, welche den gewünschten Zustand der Ressource beschreibt.
+    \item \itemname{Selbstbeschreibende Nachrichten:} Eine Nachricht enthält alle Informationen, die notwendig sind, damit der Empfänger die Nachricht verarbeiten kann. Sind Informationen aus anderen Dokumenten zum Verständnis notwendig, enthält die Nachricht einen Link auf diese Dokumente.
+    \item \itemname{Hypermedia as the Engine of Application State:} Ein Client bedarf keines vorherigen Wissens über eine API bis auf die Einstiegs-URL und das Verständnis der von der API verwendeten Mediatypes. Alle Informationen, die der Client zur Kommunikation mit dem Server benötigt, werden durch Hypermedia bereitgestellt. Mögliche Zustandsübergänge werden durch den Server angezeigt (Affordances), der Client wählt einen dieser Übergänge \autocites{Fielding2008}[S.~345ff.]{Richardson2013}.
+\end{itemize}
+Das Prinzip der einheitlichen Schnittstelle ist ausschlaggebend für die Abgrenzung von REST von anderen Architekturstilen \autocite[Abb.~5-9]{Fielding2000}.
+
+\subsubsection{Mehrschichtiges System}
+Das Prinzip der mehrschichtigen Gesamtsysteme ermöglicht es, dass ein System nicht nur aus einem Server und einem oder mehreren Clients besteht. Stattdessen können sich zwischen diesen beiden Komponenten Vermittler (Proxys und Gateways) befinden, welche sowohl als Client als auch als Server fungieren. Dabei kann eine Komponente einer Schicht nur mit den Komponenten direkt angrenzender Schichten kommunizieren und hat kein Wissen über dahinterliegende Schichten. Die Vermittler können die Nachricht umformen, da diese selbstbeschreibend ist \autocite[S.~46f., 82ff.]{Fielding2000}.
+
+\subsubsection{Code auf Anforderung}
+Nach dem Prinzip \emph{Code auf Anforderung} kann ein Server einem Client mobilen Code schicken, welcher die Verarbeitung einer Ressource beschreibt, falls jener weiß, wie die Ressource zu verarbeiten ist. Der Client führt den Code lokal aus. Dieses Prinzip ist für ein REST-System optional \autocite[S.~53, 84]{Fielding2000}.
+
+\subsection{Ablauf der Interaktionen zwischen Client und Server}\label{subsec:theory|rest|interaction}
+Client und Server in einer REST-API bilden zusammen einen verteilten Zustandsautomaten. Auf dem Client wird der aktuelle Zustand des Automaten gehalten. Der Initialzustand ist die \enquote{Homepage} der API. Ein Client betritt den Automaten durch eine Anfrage an den Homepage-Endpunkt. Die Einstiegs-URL muss dem Client vor der ersten Interaktion mit der API bekannt sein \autocite{Fielding2008}. In jeder Antwort sendet der Server die erlaubten Zustandsübergänge in Form von Hypermedia. Der Client führt einen Zustandsübergang aus, indem er eine Anfrage an einen Endpunkt des Servers sendet. Die Antwort des Servers repräsentiert den neuen Anwendungszustand \autocite[S.~2--11]{Richardson2013}. In HTTP enthält die Anfrage neben der URI der angefragten Ressource auch die HTTP-Methode, welche die Semantik der Interaktion beschreibt \autocite[S.~11]{Webber2010}.
+
+In \cref{fig:rest-state-machine} ist die Veränderung des Clientzustands dargestellt. Durch Anfragen an den Server wird ein Zustandsübergang ausgeführt. Der Initialzustand wird durch einen GET-Request an den Homepage-Endpunkt hergestellt.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{rest_state_machine.pdf}
+    \caption{Zustandsautomat aus Clientperspektive (nach \autocite[Abb.~1-7]{Richardson2013})}
+    \label{fig:rest-state-machine} % chktex 24
+\end{figure}
+Um den Zustand einer Ressource zu ändern, sendet der Client eine Repräsentation des gewünschten Zustands (HTTP POST/PUT) oder der Zustandsänderungen (HTTP PATCH) an den Server. Der Client kann den Zustand einer Ressource nicht direkt manipulieren, sondern nur den Server anfragen, den Zustand zu ändern \autocite[S.~12f.]{Richardson2013}.
+
+\para{}Laut Fielding eignet sich REST vor allem für eine grobkörnige Unterteilung der Domäne in Ressourcen \autocite[S.~101]{Fielding2000}. Dadurch müssen Clients weniger Requests senden, um die benötigten Daten zu erhalten. Allerdings kann der Server zu viele Daten zurückliefern (Overfetching). Nottingham argumentiert, dass das Multiplexing in HTTP/2 es ermöglicht, eine effiziente feingliedrige Unterteilung vorzunehmen, d.h.\ viele kleine, verlinkte Ressourcen anstatt weniger großen zu erstellen \autocite{Nottingham2019}.
+
+\section{Die Abfragesprache GraphQL}\label{sec:theory|graphql}
+
+\textbf{GraphQL} bezeichnet eine Sprache für Web-APIs zur Abfrage und Manipulation von Daten sowie eine Ausführungsumgebung für ebendiese Operationen \autocite{Facebook2018}. GraphQL wurde 2015 von Facebook veröffentlicht. Die Entwicklung startete, um eine Alternative zu REST-APIs und SQL-ähnlichen Abfragesprachen zu schaffen, welche besser auf die Anforderungen der internen mobilen Anwendungen von Facebook zugeschnitten ist \autocite{Byron2014}.
+
+\begin{foreigndisplaycquote}{english}{Byron2014}[.]
+    We were frustrated with the differences between the data we wanted to use in our apps and the server queries they required. We don’t think of data in terms of resource URLs, secondary keys, or join tables; we think about it in terms of a graph of objects and the models we ultimately use in our apps like NSObjects or JSON
+\end{foreigndisplaycquote}
+
+\noindent{}GraphQL bietet drei verschiedene Operationstypen. Durch \textbf{Querys} können Daten abgefragt und durch \textbf{Mutations} geändert werden. Weiterhin kann sich ein Client durch \textbf{Subscriptions} über Änderungen an den Daten benachrichtigen lassen. Eine Interaktion zwischen Client und Server besteht für Querys nur aus einem einzigen Request und einem einzigen Response, da diese ausreichen, um alle benötigten Daten zu erhalten. Auch mehrere Mutationen können meist mit einem einzigen Request ausgeführt werden. Für Subscriptions sendet der Client einen Request, bekommt aber, zeitlich versetzt, mehrere Responses zurück.
+
+GraphQL-Operationen sind stark typisiert. Im Folgenden wird das Typsystem von GraphQL kurz vorgestellt. Weitere Details zum Typsystem und GraphQL allgemein können in der GraphQL-Spezifikation (\autocite{Facebook2018}) nachgelesen werden.
+
+Das Typsystem dient sowohl dazu, eine Operation zu validieren, als auch, einen Client über die möglichen Operationen, d.h.\ über die Fähigkeiten des GraphQL-Servers, zu informieren \autocite[Abs.~3]{Facebook2018}. Es existieren skalare Datentypen, Objekte und abstrakte Datentypen. Zu den Skalaren zählen die primitiven Datentypen, benutzerdefinierte Skalare sowie Enumerationen. Objekte beschreiben eine Liste von Feldern. Felder bestehen aus Bezeichner, Typ und optionalen Argumenten. Felder sind Funktionen, welche Daten zurückgeben und bei Mutations zusätzlich Seiteneffekte haben\footnotemark{}. Argumente können den zurückgegebenen Wert oder den Seiteneffekt beeinflussen.
+
+\footnotetext{Seiteneffekte sind zwar auch bei Querys möglich, allerdings entspricht dies nicht der Konvention.}
+
+Alle Typen des GraphQL-Services bilden zusammen das \textbf{Schema}. In der Schemadefinition werden die \emph{Root-Operation-Typen} für Querys, Mutations und Subscriptions festgelegt. Ein Root-Operation-Typ selbst ist ein Objekt und verfügt über Felder, welche durch einen Client abgefragt bzw.\ ausgeführt werden können. Root-Operation-Typen bilden den Einstiegspunkt in die jeweilige Operation.
+
+In einem Query werden, beginnend von dem im Schema festgelegten Root-Query-Typen, die Felder ausgewählt, welche der Client benötigt. Diese Felder bilden das \textbf{Selection-Set}. Wird der Query ausgeführt, wird für jedes Feld der entsprechende Wert bestimmt. Ist ein ausgewähltes Feld ein Objekt, muss für dieses selbst ein Selection-Set angegeben werden. Somit ist das Selection-Set ein Baum mit dem Root-Query-Typen als Wurzel. Skalare bilden die Blätter des Baums, während Objekte die inneren Knoten darstellen \autocite{Facebook2018}. Durch die exakte Bestimmung der Daten, welche in Client benötigt, werden Over- und Underfetching vermieden \autocite[S.~7ff.]{Porcello2018}.
+
+\para{}\textbf{Introspection} ermöglicht es, das Schema des GraphQL-Servers, d.h.\ alle verfügbaren Typen und deren Eigenschaften und Felder, zur Laufzeit abzufragen. Wenn die Felder des Schemas eine Beschreibung erhalten, kann durch Introspection eine Dokumentation generiert werden \autocite[Abs.~4.2]{Facebook2018}. Weiterhin ermöglicht Introspection z.B.\ die Codegenerierung für Clients oder die Unterstützung von GraphQL-Benutzerinnen und -Benutzern in Entwicklungsumgebungen \autocite[S.~26]{Giroux2020}.
+
+\section{Das gRPC-Protokoll}\label{sec:theory|grpc}
+
+\textbf{gRPC} ist ein von Google entwickeltes RPC-Protokoll und gleichzeitig plattformunabhängiges Framework. Es dient dazu, Services innerhalb von und zwischen Datenzentren zu verbinden, kann aber auch für den Zugriff von Endgeräten auf einen Backend-Service eingesetzt werden \autocite{gRPC_About}.
+
+\para{}\textbf{Remote Procedure Call (RPC)} ist ein Modell, um Prozeduren über ein Kommunikationsnetzwerk aufzurufen. Es wurde als erstes in RFC 707 als \textit{Procedure Call Model} beschrieben \autocite{RFC707}. In RPC ruft ein Client eine Prozedur eines Servers auf, indem er eine Nachricht mit dem Namen und den Argumenten der Prozedur sendet. Die Ausführung der aufrufenden Prozedur auf dem Client wird blockiert. Der Server führt daraufhin die aufgerufene Prozedur aus und sendet das Resultat zurück an den Client, welcher die Ausführung fortsetzen kann \autocite{RFC5531}.
+
+Nach Birrel und Nelson bietet RPC eine einfache Semantik, hohe Effizienz und Generalität \autocite{Birrell1984}. Remote-Procedure-Calls sollen wie lokale Prozeduraufrufe aussehen \autocite{RFC707}. Idealerweise unterscheidet sich ein Prozeduraufruf über das Netzwerk für Entwicklerinnen und Entwickler nicht von einem lokalen Aufruf. Dadurch verbirgt RPC das Netzwerk und suggeriert Lokalität. Nach Waldo et al.\ erfordert das Programmieren verteilter Systeme aber, die Latenz des Netzwerks und Probleme wie einen Teilausfall von Netzwerkknoten zu berücksichtigen. Weiterhin muss eine andere Art des Speicherzugriffs gewählt werden. Deshalb gibt es \foreigntextcquote{english}{Waldo1994}[.]{fundamental differences between the interactions of distributed objects and the interactions of non-distributed objects}
+
+\para{}gRPC ist ein Framework für RPC. Es wurde 2015 von Google veröffentlicht und ist der Nachfolger von \textit{Stubby}. Stubby ist ein RPC-Framework, welches in Googles Rechenzentren eingesetzt wurde, um eine große Anzahl an Microservices zu verbinden, und Effizienz, Sicherheit und Zuverlässigkeit gewährleisten sollte \autocite{gRPC_Motivation}. gRPC definiert ein Protokoll für die Interprozesskommunikation und übernimmt daneben Authentifizierung, Zugriffskontrolle und Überwachung der Kommunikation \autocite[S.~3]{Indrasiri2020}. gRPC ermöglicht einen bidirektionalen Austausch von Nachrichten, entweder nach dem Request-Response-Schema oder als Stream. Die Kommunikation kann sowohl synchron als auch asynchron stattfinden \autocite[S.~2]{Indrasiri2020}. Als Transportprotokoll wird HTTP/2 verwendet.
+
+\para{}Jeder gRPC-Service veröffentlicht die Definition seiner Schnittstelle, welche die vorhandenen Prozeduren mit Argumenten und Rückgabetypen beschreibt. Als Sprache für diese Servicedefinition werden \textbf{Protocol Buffers (Protobuf)} verwendet. Diese dienen gleichzeitig als binäres Serialisierungsformat, wobei die Verwendung anderer Formate möglich ist \autocite[S.~4]{Indrasiri2020}. Eine vollständige Beschreibung von Protobuf 3 findet sich im Language Guide\footnote{Language Guide (proto3): \url{https://developers.google.com/protocol-buffers/docs/proto3} (besucht am 29.08.2020)}.
+
+Aus der Servicedefinition kann ein \textbf{Client-Stub} generiert werden. Der Client-Stub besitzt die gleiche Schnittstelle wie der gRPC-Service, übertragen in die jeweilige Programmiersprache. Er übernimmt die Serialisierung und Deserialisierung der Nachrichten sowie die Netzwerkkommunikation. Dadurch muss sich eine Entwicklerin oder ein Entwickler nicht mehr selbst um die Details des Nachrichtenaustauschs kümmern und der Aufruf der Prozedur auf dem Server erscheint so einfach wie ein lokaler Prozeduraufruf. Weiterhin kann ein \textbf{Server-Skeleton} aus der Servicedefinition generiert werden, welches die Details der Kommunikation auf Serverseite abstrahiert \autocite[S.~2f.]{Indrasiri2020}. Neben dem Stub bzw.\ Skeleton selbst werden auch die Klassen oder Interfaces für die Nachrichtentypen erzeugt \autocite[S.~25]{Indrasiri2020}. Die Codegenerierung erfolgt durch den Protocol-Buffer-Compiler (protoc) und ist von der gewählten Programmiersprache abhängig. Zum Zeitpunkt des Schreibens werden elf Programmiersprachen unterstützt \autocite{gRPC_Languages}.
+
+Die Interaktionen zwischen Client und Server verhalten sich ähnlich wie die Interaktionen bei der Verwendung einer lokalen Programmbibliothek. Je nach Anwendungsfall reicht ein einziger Request aus, z.B.\ um eine einzelne Aktion anzustoßen, oder es ist ein komplexeres Hin und Her zwischen beiden Parteien notwendig.
+
+\section{Zusammenfassung}
+
+In diesem Kapitel wurden Web-APIs als Vertrag zwischen Client und Server definiert und nach Interaktionsmustern in Request-Response- und Event-Driven-APIs sowie nach Zielgruppe in Public- und Private-APIs unterteilt.
+
+REST ist ein Architekturstil für Web-APIs, bei dem Client und Server miteinander kommunizieren, indem der Client eine Anfrage an einen Endpunkt des Servers mit zugehöriger URI stellt. Der Server antwortet mit einer Repräsentation der durch diese URI identifizierten Ressource oder einer Repräsentation anderer Informationen. Die Antwort enthält Hypermedia-Elemente, welche dem Client die nächsten möglichen Anfragen anzeigen, die er stellen kann. Clients können den Zustand von Ressourcen durch Repräsentationen verändern. REST-APIs erfüllen die sechs REST-Prinzipien, wobei das Prinzip der einheitlichen Schnittstelle eine essentielle Rolle spielt.
+
+GraphQL ist eine Sprache für die Abfrage und Manipulation von Daten. Alle Operationen sind stark typisiert und werden durch das Schema beschrieben. Introspection ermöglicht es Clients, das Schema abzufragen und so die API zu erkunden und Requests vorab zu validieren.
+
+gRPC ist ein Protokoll und Framework für Remote-Procedure-Calls und wird vorrangig für Interprozesskommunikation eingesetzt, kann aber auch für Public-APIs verwendet werden. gRPC-Services verfügen über eine Servicedefinition, aus welcher Code für Client und Server generiert werden kann. Der generierte Code verbirgt die Details des Nachrichtenaustauschs. Als Sprache für die Servicedefinition sowie als Datenübertragungsformat werden Protocol Buffers verwendet.
+
+\para{}Nachdem nun drei weit verbreitete API-Stile erläutert und vor allem die Grundlagen von REST eingeführt wurden, wird im nächsten Kapitel Introspected REST vorgestellt, ein neuer API-Stil, welcher sich als Alternative zu REST und GraphQL positioniert.
