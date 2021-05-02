@@ -1,0 +1,74 @@
+\onecolumn{}
+\section{Tasks for performance evaluation}\label{app:perf-tasks}
+
+\begin{enumerate}[label=\textbf{T\arabic*}]
+    \item\label{itm:perf-tasks|all-notes} For every note, query its id and title as well as the user name of its creator.
+    \item\label{itm:perf-tasks|first-note} Query the title, content, and date of creation of the first note from~\ref{itm:perf-tasks|all-notes}.
+    \item\label{itm:perf-tasks|related-keywords} Query the keywords of all notes that were edited by an author who also edited the first note from~\ref{itm:perf-tasks|all-notes}.
+    \item\label{itm:perf-tasks|add-keyword} Add the new keyword \enquote{Neu} to the first note from~\ref{itm:perf-tasks|all-notes}.
+    \item\label{itm:perf-tasks|delete-with-keyword} Delete all notes that are tagged with the keyword \enquote{Mathematik}.
+\end{enumerate}
+
+\section{Results of performance evaluation}\label{app:perf-results}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\textwidth]{performance_results_long.pdf}
+    \caption{Average response time per task and API client in relation to Introspected REST client}
+\end{figure}
+
+\newpage{}
+\section{Simulated changes for evolvability evaluation}\label{app:evolvability-changes}
+
+\begin{enumerate}[label=\textbf{C\arabic*}]
+    \item Add a new mandatory field to a request
+    \item Add a new optional field to a request
+    \item Remove a field from a response
+    \item Rename a term
+    \item Add a field to a response
+    \item Add a step to a workflow
+    \item Add a constraint for moving to the next step in a workflow
+    \item Prohibit unauthorized access to a resource
+    \item Add new functionality to the API 
+\end{enumerate}
+
+\section{Classification of the simulated changes}\label{app:evolvability-results}
+
+\begin{table}[ht]
+    \begin{tabular}{ l c c c c }
+        & Int. REST & REST & GraphQL & gRPC\\
+        \midrule
+        C1 & \cmark{} & \cmark{} & \cmark{} & \xmark{}\\
+        C2 & \cmark{} & \cmark{} & \cmark{} & \cmark{}\\
+        C3 & \xmark{} & \xmark{} & \xmark{} & \xmark{}\\
+        C4 & \cmark{} & \cmark{} & \xmark{} & \xmark{}\\
+        C5 & \cmark{} & \cmark{} & \cmark{} & \cmark{}\\
+        C6 & \cmark{} & \cmark{} & \cmark{} & \cmark{}\\
+        C7 & \cmark{} & \cmark{} & \xmark{} & \xmark{}\\
+        C8 & \cmark{} & \cmark{} & \xmark{} & \cmark{}\\
+        C9 & \cmark{} & \cmark{} & \cmark{} & \cmark{}\\
+    \end{tabular}
+    \caption{Classification of changes as non-breaking (\cmark{}) or breaking (\xmark{}) per API style}
+\end{table}
+
+\newpage{}
+\section{Results of heuristic usability evaluation}\label{app:usability-results}
+
+\begin{table}[htb]
+    \begin{tabular}{ l c c c c }
+        & Int. REST & REST & GraphQL & gRPC\\
+        \midrule
+        \comprow{Easy to get started}{++}{++}{+++}{+}
+        \comprow{Visibility of actions}{++}{++}{++}{+}
+        \comprow{Meaningful error messages}{+}{+}{++}{+}
+        \comprow{Helpful documentation}{++}{++}{+++}{+++}
+        \comprow{Prevent invalid inputs}{+}{-}{+++}{+++}
+        \comprow{Not showing impermissible actions}{++}{+++}{-}{-}
+        \comprow{As small as possible}{++}{-}{+++}{-}
+        \comprow{Small steps}{++}{++}{-}{-}
+        \comprow{Layering}{+++}{+++}{+}{-}
+        \comprow{Satisfy expectations}{++}{+}{+++}{++}
+        \comprow{Recognizable patterns}{++}{+}{+++}{+}
+    \end{tabular}
+    \caption{Assessment of API styles regarding compliance with heuristics}
+\end{table}

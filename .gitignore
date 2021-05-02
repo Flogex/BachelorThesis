@@ -16,10 +16,10 @@
 *.sav
 *.run.xml
 *.synctex*
-**/Thesis/**/*.pdf
-**/Thesis/**/*.toc
-**/Thesis/**/*.out
-**/Thesis/**/*.pyg
-**/Thesis/_minted-main/*
+/src/**/*.pdf
+/src/**/*.toc
+/src/**/*.out
+/src/**/*.pyg
+src/Thesis/_minted-main/*
 
 *.code-workspace

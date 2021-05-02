@@ -1,0 +1,35 @@
+% !TeX encoding = UTF-8
+\documentclass[
+  a4paper,
+  twocolumn,
+  twoside=false,
+  UKenglish,
+  fontsize=12pt,
+  headings=normal,
+  draft=false,
+]{scrartcl}
+
+\input{preamble.tex}
+
+\setkomafont{author}{\large}
+\setkomafont{date}{\large}
+
+\title{\LARGE Introspected REST\@: An alternative to REST and GraphQL?} % Hack, because \Huge is hardcoded in KOMAScript
+\author{Florian Gerlinghoff}
+
+\begin{document}
+
+\maketitle{}
+
+\begin{abstract}
+  \noindent{}The following pages summarize my bachelor's thesis, which I have written in German. The complete translated title is \textit{A comparison of Introspected REST with alternative approaches to the development of web APIs with regards to performance, evolvability, and complexity}. Please find the complete thesis attached.
+\end{abstract}
+
+\input{content.tex}
+
+\printbibliography{}
+
+\appendix
+\include{appendix}
+
+\end{document}
